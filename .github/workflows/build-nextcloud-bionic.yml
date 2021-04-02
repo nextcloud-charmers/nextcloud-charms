@@ -1,5 +1,5 @@
 # Builds libs, charm and runs unittests on ubuntu bionic.
-name: Nextcloud charm
+name: Nextcloud charm (bionic)
 
 on:
   push:
