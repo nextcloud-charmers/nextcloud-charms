@@ -117,7 +117,7 @@ class NextcloudCharm(CharmBase):
         self._stored.apache_configured = True
         self.unit.status = MaintenanceStatus("apache2 config complete.")
         self._config_php()
-        # self._config_website()
+        self._config_overwriteprotocol()
         sp.check_call(['systemctl', 'restart', 'apache2.service'])
         self._on_update_status(event)
 
@@ -406,6 +406,13 @@ class NextcloudCharm(CharmBase):
             self.unit.status = MaintenanceStatus("ceph config complete.")
             self.update_relation_ceph_config_php()
 
+    def _config_overwriteprotocol(self):
+        """
+        Configures nextcloud overwriteprotocol to http or https.
+        :return:
+        """
+        if self._stored.nextcloud_initialized:
+            Occ.overwriteprotocol(self.config.get('overwriteprotocol'))
 
 if __name__ == "__main__":
     main(NextcloudCharm)

@@ -48,3 +48,8 @@ options:
     default: https://download.nextcloud.com/server/releases/nextcloud-20.0.6.tar.bz2
     description: >
       Sources for nextcloud (must be tar.bz2)
+  overwriteprotocol:
+    type: string
+    default: http
+    description: >
+      Set this to https if you place a ssl-termination proxy in front of your nextcloud instance.

@@ -5,7 +5,6 @@ import sys
 
 logger = logging.getLogger(__name__)
 
-
 class Occ:
 
     @staticmethod
@@ -117,3 +116,17 @@ class Occ:
             print(e)
             sys.exit(-1)
         return returndict
+
+    @staticmethod
+    def overwriteprotocol(protocol='http'):
+        """
+        Sets the overwrite protocol with occ
+        :return:
+        """
+        if protocol == "http" or protocol == "https":
+            logger.log(logging.INFO, "Setting overwriteprotocol to: " + protocol)
+            cmd = ("sudo -u www-data /usr/bin/php occ config:system:set overwriteprotocol --value=" + protocol)
+            sp.call(cmd.split(), cwd='/var/www/nextcloud')
+        else:
+            logger.log(logging.ERROR, "Unsupported overwriteprotocol provided as config: " + protocol)
+            sys.exit(-1)
