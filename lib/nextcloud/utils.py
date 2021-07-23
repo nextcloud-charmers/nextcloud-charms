@@ -40,9 +40,9 @@ def close_port(start, end=None, protocol="tcp"):
     _modify_port(start, end, protocol=protocol, hook_tool="close-port")
 
 
-def set_directory_permissions():
-    sp.call("sudo chown -R www-data:www-data /var/www/nextcloud".split(),
-            cwd='/var/www/nextcloud')
+def set_nextcloud_permissions():
+    cmd = "chown -R www-data:www-data /var/www/nextcloud"
+    sp.run(cmd.split(), cwd='/var/www/nextcloud')
 
 
 def install_dependencies():
@@ -166,6 +166,20 @@ def config_apache2(templates_path, template):
     sp.check_call(['a2dissite', '000-default'])
     # Enable nextcloud site (wich will be default)
     sp.check_call(['a2ensite', 'nextcloud'])
+
+
+def install_nfs_systemd_mount(templates_path, template, ctx):
+    """
+    Installs nfs systemd.mount unit file
+    ctx = {'nfs_host': <iphostname>, 'appname': <appname>}
+    """
+    template = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(templates_path)
+    ).get_template(template)
+    target = Path('/etc/systemd/system/media-nextcloud-data.mount')
+    target.write_text(template.render(ctx))
+    sp.call(['systemctl', 'daemon-reload'])
+
 
 
 def config_php(phpmod_context, templates_path, template):
