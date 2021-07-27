@@ -27,6 +27,7 @@ from nextcloud.occ import Occ
 
 from interface_http import HttpProvider
 import interface_redis
+import interface_mount
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +54,7 @@ class NextcloudCharm(CharmBase):
                                  database_available=False,
                                  apache_configured=False,
                                  php_configured=False,
-                                 ceph_configured=False)
+                                 ceph_configured=False,)
         self._stored.set_default(db_conn_str=None, db_uri=None, db_ro_uris=[])
 
         event_bindings = {
@@ -69,14 +70,19 @@ class NextcloudCharm(CharmBase):
             self.on.cluster_relation_departed: self._on_cluster_relation_departed,
             self.on.cluster_relation_broken: self._on_cluster_relation_broken,
             self.on.set_trusted_domain_action: self._on_set_trusted_domain_action,
-            self.on.shared_fs_relation_changed: self._on_shared_fs_relation_changed,
             self.on.ceph_relation_changed: self._on_ceph_relation_changed
         }
 
-        # REDIS
+        # Relation: redis (Interface: redis)
         self._stored.set_default(redis_info=dict())
         self._redis = interface_redis.RedisClient(self, "redis")
-        self.framework.observe(self._redis.on.redis_available, self._on_redis_available)
+        self.framework.observe(self._redis.on.redis_available,
+                               self._on_redis_available)
+
+        # Relation: shared-fs (Interface: mount)
+        self._sharedfs = interface_mount.NFSMountClient(self, "shared-fs")
+        self.framework.observe(self._sharedfs.on.nfsmount_available,
+                               self._on_nfsmount_available)
 
         for event, handler in event_bindings.items():
             self.framework.observe(event, handler)
@@ -91,18 +97,20 @@ class NextcloudCharm(CharmBase):
             self.framework.observe(action, handler)
 
     def _on_install(self, event):
-        self.unit.status = MaintenanceStatus("Begin installing dependencies...")
+        self.unit.status = MaintenanceStatus("installing dependencies...")
         utils.install_dependencies()
-        self.unit.status = MaintenanceStatus("Dependencies installed")
         if not self._stored.nextcloud_fetched:
             # Fetch nextcloud to /var/www/
-            self.unit.status = MaintenanceStatus("Begin fetching sources.")
             try:
+                self.unit.status = MaintenanceStatus("installing from resource.")
                 tarfile_path = self.model.resources.fetch('nextcloud-tarfile')
+                self.unit.status = MaintenanceStatus("extracting...")
                 utils.extract_nextcloud(tarfile_path)
             except ModelError:
+                self.unit.status = MaintenanceStatus("installing from config nextcloud-tarfile.")
                 utils.fetch_and_extract_nextcloud(self.config.get('nextcloud-tarfile'))
-            self.unit.status = MaintenanceStatus("Sources installed")
+            utils.set_nextcloud_permissions()
+            self.unit.status = MaintenanceStatus("installed")
             self._stored.nextcloud_fetched = True
 
     def _on_config_changed(self, event):
@@ -172,23 +180,25 @@ class NextcloudCharm(CharmBase):
             if 'nextcloud_config' not in event.relation.data[self.app]:
                 event.defer()
                 return
+
             nextcloud_config = event.relation.data[self.app]['nextcloud_config']
             with open(NEXTCLOUD_CONFIG_PHP, "w") as f:
                 f.write(nextcloud_config)
-            data_dir_path = os.path.join(NEXTCLOUD_ROOT, 'data')
-            ocdata_path = os.path.join(data_dir_path, '.ocdata')
-            if not os.path.exists(data_dir_path):
-                os.mkdir(data_dir_path)
-            if not os.path.exists(ocdata_path):
-                open(ocdata_path, 'a').close()
-            utils.set_directory_permissions()
-            self._stored.database_available = True
-            self._stored.nextcloud_initialized = True
-            # Broadcast ceph config to peers
+            # data_dir_path = os.path.join(NEXTCLOUD_ROOT, 'data')
+            # ocdata_path = os.path.join(data_dir_path, '.ocdata')
+            # if not os.path.exists(data_dir_path):
+            #     os.mkdir(data_dir_path)
+            # if not os.path.exists(ocdata_path):
+            #     open(ocdata_path, 'a').close()
+
             if 'ceph_config' in event.relation.data[self.app]:
                 ceph_config = event.relation.data[self.app]['ceph_config']
                 with open(NEXTCLOUD_CEPH_CONFIG_PHP, "w") as f:
                     f.write(ceph_config)
+
+            utils.set_nextcloud_permissions()
+            self._stored.database_available = True
+            self._stored.nextcloud_initialized = True
 
     def _on_cluster_relation_departed(self, event):
         self.framework.breakpoint('departed')
@@ -226,7 +236,7 @@ class NextcloudCharm(CharmBase):
         if event.master and event.database == 'nextcloud':
             self._stored.database_available = True
             if not self._stored.nextcloud_initialized:
-                utils.set_directory_permissions()
+                utils.set_nextcloud_permissions()
                 self._init_nextcloud()
                 self._add_initial_trusted_domain()
                 installed = Occ.status()['installed']
@@ -352,42 +362,50 @@ class NextcloudCharm(CharmBase):
         utils.config_redis(self._stored.redis_info,
                            Path(self.charm_dir / 'templates'), 'redis.config.php.j2')
 
+        utils.config_redis_session(self._stored.redis_info,
+                                   Path(self.charm_dir / 'templates'), 'redis_session.ini.j2')
+
+        # When redis is configured, apache needs a restart.
+        sp.run(['systemctl', 'restart', 'apache2.service'])
+
+
     def _on_set_trusted_domain_action(self, event):
         domain = event.params['domain']
         Occ.config_system_set_trusted_domains(domain, 1)
         self.update_config_php_trusted_domains()
 
-    def _on_shared_fs_relation_changed(self, event):
-        if self._stored.nextcloud_initialized:
-            self.unit.status = BlockedStatus("Add NFS storage after deploy not supported.")
-            return
-
-        self.unit.status = MaintenanceStatus("Adding NFS storage.")
-        remote_host = event.relation.data[event.unit].get('ingress-address')  # or private-address?
-        export_path = event.relation.data[event.unit].get('mountpoint')
-        mount_options = event.relation.data[event.unit].get('options')
-        fstype = event.relation.data[event.unit].get('fstype')
-
-        try:
-            packages = ['rpcbind', 'nfs-common']
-            cmd = ["sudo", "apt", "install", "-y"]
-            cmd.extend(packages)
-            sp.run(cmd, check=True)
-        except sp.CalledProcessError as e:
-            print(e)
-            sys.exit(-1)
-
-        local_data_dir = '/var/www/nextcloud/data'
-        if not os.path.exists(local_data_dir):
-            os.mkdir(local_data_dir)
-        cmd = "mount -t {} -o {} {}:{} {}".format(fstype,
-                                                  mount_options,
-                                                  remote_host,
-                                                  export_path,
-                                                  local_data_dir)
+    def _on_nfsmount_available(self, event):
+        # systemd mount unit in place, so lets start it.
+        cmd = "systemctl start media-nextcloud-data.mount"
         sp.run(cmd.split())
 
-        utils.set_directory_permissions()
+        # Put site in maintenance.
+        # sudo -u www-data php /path/to/nextcloud/occ maintenance:mode --on
+        Occ.maintenance_mode(enable=True)
+
+        # Set ownership
+        cmd = "chown www-data:www-data /media/nextcloud/data"
+        sp.run(cmd.split())
+
+        # Make sure the directory is a nextcloud datadir
+        # touch $datadirectory/.ocdata (/media/nextcloud/data)
+        cmd = "sudo -u www-data touch /media/nextcloud/data/.ocdata"
+        sp.run(cmd.split())
+
+        # Fix up permission on nfs mount
+        cmd = "chmod 0770 /media/nextcloud/data/"
+        sp.run(cmd.split())
+
+        # Set new datadir
+        cmd = "sudo -u www-data php occ config:system:set datadirectory --value=/media/nextcloud/data/"
+        sp.run(cmd.split(), cwd="/var/www/nextcloud/")
+
+        # Cleanup cache
+        cmd = "sudo -u www-data php occ files:cleanup"
+        sp.run(cmd.split(), cwd="/var/www/nextcloud/")
+
+        # sudo -u www-data php /path/to/nextcloud/occ maintenance:mode --off
+        Occ.maintenance_mode(enable=False)
 
     def _on_ceph_relation_changed(self, event):
         if not self.model.unit.is_leader():
