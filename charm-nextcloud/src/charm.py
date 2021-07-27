@@ -359,7 +359,7 @@ class NextcloudCharm(CharmBase):
 
     def _on_shared_fs_relation_changed(self, event):
         if self._stored.nextcloud_initialized:
-            self.unit.status = BlockedStatus("Adding NFS storage after installation is not supported.")
+            self.unit.status = BlockedStatus("Add NFS storage after deploy not supported.")
             return
 
         self.unit.status = MaintenanceStatus("Adding NFS storage.")
@@ -380,7 +380,11 @@ class NextcloudCharm(CharmBase):
         local_data_dir = '/var/www/nextcloud/data'
         if not os.path.exists(local_data_dir):
             os.mkdir(local_data_dir)
-        cmd = "mount -t {} -o {} {}:{} {}".format(fstype, mount_options, remote_host, export_path, local_data_dir)
+        cmd = "mount -t {} -o {} {}:{} {}".format(fstype,
+                                                  mount_options,
+                                                  remote_host,
+                                                  export_path,
+                                                  local_data_dir)
         sp.run(cmd.split())
 
         utils.set_directory_permissions()

@@ -50,7 +50,6 @@ class NFSMountClient(Object):
             self._on_relation_changed
         )
 
-
     def _on_relation_changed(self, event):
         """" Render the mount unit file, but dont start it as you
         might want to do things before the mount takes place. """
@@ -69,7 +68,6 @@ class NFSMountClient(Object):
 
         # Let the world know we're done.
         self.on.nfsmount_available.emit()
-
 
     def _on_relation_created(self, event):
         """ Install NFS deps """
