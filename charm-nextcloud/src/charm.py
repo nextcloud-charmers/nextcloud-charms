@@ -368,7 +368,6 @@ class NextcloudCharm(CharmBase):
         # When redis is configured, apache needs a restart.
         sp.run(['systemctl', 'restart', 'apache2.service'])
 
-
     def _on_set_trusted_domain_action(self, event):
         domain = event.params['domain']
         Occ.config_system_set_trusted_domains(domain, 1)
