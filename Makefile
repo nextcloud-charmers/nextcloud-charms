@@ -9,8 +9,7 @@ clean: ## Remove .tox and build dirs
 	rm -rf venv/
 	rm -rf *.charm
 
-## Build nextcloud charm
-build: build-lib
+build: build-lib ## Build nextcloud charm
 	@charmcraft build --from charm-nextcloud
 
 ## Build nextcloud private charm

@@ -151,7 +151,7 @@ class NextcloudPrivateCharm(CharmBase):
         if event.master and event.database == 'nextcloud':
             self._stored.database_available = True
             if not self._stored.nextcloud_initialized:
-                utils.set_directory_permissions()
+                utils.set_nextcloud_permissions()
                 self._init_nextcloud()
                 self._add_initial_trusted_domain()
                 installed = Occ.status()['installed']
