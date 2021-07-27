@@ -414,5 +414,6 @@ class NextcloudCharm(CharmBase):
         if self._stored.nextcloud_initialized:
             Occ.overwriteprotocol(self.config.get('overwriteprotocol'))
 
+
 if __name__ == "__main__":
     main(NextcloudCharm)
