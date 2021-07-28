@@ -18,21 +18,22 @@ The charm supports the following clouds:
   * OpenStack cloud
   * LXD cloud
   * vsphere
-  * Kubernetes (coming soon)
 
 **Public clouds:**
 
 * Amazon Web Services (AWS) 
 * Google Cloud Engine (GCE)
-* Kubernetes (coming soon)
+
+Plans for supporting Kubernetes exists.
 
 #### 2. Select & configure supported primary storage backend
   * CEPH (rados-gw)
   * NFS
     
-#### 3. Selecting a redis backend
+#### 3. Selecting a redis backend for files and sessions.
   * Redis Singleton 
-  * Redis cluster
+
+Plans to support redis cluster exists.
 
 #### 4. Setting pre-deployment charm config
 * Set an initial admin password.
@@ -51,7 +52,7 @@ by the Nextcloud manual.
 
 ### Overview
 
-    juju config nextcloud .... 
+    juju config nextcloud
 
 ## Upgrading
 Upgrading in a Dwellir Nextcloud deployment can be divided in four categories:  
@@ -60,7 +61,6 @@ Upgrading in a Dwellir Nextcloud deployment can be divided in four categories:
 Juju is upgraded normally by controller or model upgrades.
 
 Follow the upgrade process of Juju for controller and model upgrade.
-
 
     juju upgrade controller
 
