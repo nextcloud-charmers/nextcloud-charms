@@ -7,6 +7,6 @@ bases:
       - name: ubuntu
         channel: "20.04"
         architectures: [amd64]
-      - name: "18.04"
-        channel: ""
+      - name: ubuntu
+        channel: "18.04"
         architectures: [amd64]
