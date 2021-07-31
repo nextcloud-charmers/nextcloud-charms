@@ -6,3 +6,5 @@ nextcloud.charm
 *build*
 .tox/
 /charm-nextcloud/venv/
+*charm
+*whl
