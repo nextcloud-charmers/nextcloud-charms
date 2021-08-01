@@ -19,7 +19,8 @@ from ops.model import (
     ActiveStatus,
     BlockedStatus,
     MaintenanceStatus,
-    ModelError
+    ModelError,
+    WaitingStatus
 )
 
 from nextcloud import utils
@@ -102,12 +103,11 @@ class NextcloudCharm(CharmBase):
         if not self._stored.nextcloud_fetched:
             # Fetch nextcloud to /var/www/
             try:
-                self.unit.status = MaintenanceStatus("installing from resource.")
+                self.unit.status = MaintenanceStatus("installing (from resource).")
                 tarfile_path = self.model.resources.fetch('nextcloud-tarfile')
-                self.unit.status = MaintenanceStatus("extracting...")
                 utils.extract_nextcloud(tarfile_path)
             except ModelError:
-                self.unit.status = MaintenanceStatus("installing from config nextcloud-tarfile.")
+                self.unit.status = MaintenanceStatus("installing (from network).")
                 utils.fetch_and_extract_nextcloud(self.config.get('nextcloud-tarfile'))
             utils.set_nextcloud_permissions()
             self.unit.status = MaintenanceStatus("installed")
@@ -120,11 +120,11 @@ class NextcloudCharm(CharmBase):
         :param event:
         :return:
         """
-        self.unit.status = MaintenanceStatus("Begin config apache2.")
-        utils.config_apache2(Path(self.charm_dir / 'templates'), 'nextcloud.conf.j2')
-        self._stored.apache_configured = True
-        self.unit.status = MaintenanceStatus("apache2 config complete.")
+        self._config_apache()
         self._config_php()
+        #TODO: let only the leader do changes to config. overwiteprotocol should
+        # go that way rather than locally get changed since it its inconsistent with
+        # how the rest of the config is done..
         self._config_overwriteprotocol()
         sp.check_call(['systemctl', 'restart', 'apache2.service'])
         self._on_update_status(event)
@@ -142,14 +142,13 @@ class NextcloudCharm(CharmBase):
 
     # Only leader is running this hook (verify this)
     def _on_leader_elected(self, event):
-        logger.debug("!!!!!!!!new leader!!!!!!!!")
-        self.framework.breakpoint('leader')
+        logger.debug("!!!!!!!! I'm new nextcloud leader !!!!!!!!")
         self.update_config_php_trusted_domains()
 
     def update_config_php_trusted_domains(self):
         if not os.path.exists(NEXTCLOUD_CONFIG_PHP):
             return
-        self.framework.breakpoint('trusted')
+
         cluster_rel = self.model.relations['cluster'][0]
         rel_unit_ip = [cluster_rel.data[u]['ingress-address'] for u in cluster_rel.units]
         this_unit_ip = cluster_rel.data[self.model.unit]['ingress-address']
@@ -176,6 +175,10 @@ class NextcloudCharm(CharmBase):
             self.update_config_php_trusted_domains()
 
     def _on_cluster_relation_changed(self, event):
+        """
+        When a change on the config happens:
+        Pull in configs from the peer (cluster) relation and write it to local disk.
+        """
         if not self.model.unit.is_leader():
             if 'nextcloud_config' not in event.relation.data[self.app]:
                 event.defer()
@@ -184,21 +187,18 @@ class NextcloudCharm(CharmBase):
             nextcloud_config = event.relation.data[self.app]['nextcloud_config']
             with open(NEXTCLOUD_CONFIG_PHP, "w") as f:
                 f.write(nextcloud_config)
-            # data_dir_path = os.path.join(NEXTCLOUD_ROOT, 'data')
-            # ocdata_path = os.path.join(data_dir_path, '.ocdata')
-            # if not os.path.exists(data_dir_path):
-            #     os.mkdir(data_dir_path)
-            # if not os.path.exists(ocdata_path):
-            #     open(ocdata_path, 'a').close()
+
+            #TODO: only create .ocdata file for debug since it scale out
+            # will only work with a shared-fs like NFS.
+            self._make_ocdata_for_occ()
 
             if 'ceph_config' in event.relation.data[self.app]:
                 ceph_config = event.relation.data[self.app]['ceph_config']
                 with open(NEXTCLOUD_CEPH_CONFIG_PHP, "w") as f:
                     f.write(ceph_config)
 
+            # Since config comes via root, we need to fix the perms here.
             utils.set_nextcloud_permissions()
-            self._stored.database_available = True
-            self._stored.nextcloud_initialized = True
 
     def _on_cluster_relation_departed(self, event):
         self.framework.breakpoint('departed')
@@ -209,12 +209,18 @@ class NextcloudCharm(CharmBase):
         pass
 
     def _on_master_changed(self, event: pgsql.MasterChangedEvent):
+        self.unit.status = MaintenanceStatus("database master changed")
         if event.database != 'nextcloud':
             # Leader has not yet set requirements. Wait until next event,
             # or risk connecting to an incorrect database.
             return
-        # Only install nextcloud first time. Other peers will copy the configuration
+
+        # Only leader gets to install or configure nextcloud.
+        # Other peers will copy the configuration and therefore must trust that
+        # nextcloud is initialized and that we have a database from config.
         if not self.model.unit.is_leader():
+            self._stored.nextcloud_initialized = True
+            self._stored.database_available = True
             return
         # The connection to the primary database has been created,
         # changed or removed. More specific events are available, but
@@ -245,7 +251,8 @@ class NextcloudCharm(CharmBase):
                     self._stored.nextcloud_initialized = True
 
     def _on_start(self, event):
-        if not self._stored.nextcloud_initialized:
+        if not Occ.status()['installed']:
+            logger.debug("Nextcloud not installed, defering start.")
             event.defer()
             return
         try:
@@ -268,9 +275,11 @@ class NextcloudCharm(CharmBase):
         This action places the site in maintenance mode to protect it
         while this action runs.
         """
+        #TODO: Only leader should place site in maintenance.
         Occ.maintenance_mode(enable=True)
         o = Occ.db_convert_filecache_bigint()
         event.set_results({"occ-output": o})
+        # TODO: Only leader should place site off maintenance.
         Occ.maintenance_mode(enable=False)
 
     def _on_maintenance_action(self, event):
@@ -288,7 +297,7 @@ class NextcloudCharm(CharmBase):
         This is instead of manipulating the system wide php.ini
         which might be overwitten or changed from elsewhere.
         """
-        self.unit.status = MaintenanceStatus("Begin config php.")
+        self.unit.status = MaintenanceStatus("config php...")
         phpmod_context = {
             'max_file_uploads': self.config.get('php_max_file_uploads'),
             'upload_max_filesize': self.config.get('php_upload_max_filesize'),
@@ -297,14 +306,21 @@ class NextcloudCharm(CharmBase):
         }
         utils.config_php(phpmod_context, Path(self.charm_dir / 'templates'), 'nextcloud.ini.j2')
         self._stored.php_configured = True
-        self.unit.status = MaintenanceStatus("php config complete.")
+
+    def _config_apache(self):
+        """
+        Configured apache
+        """
+        self.unit.status = MaintenanceStatus("config apache....")
+        utils.config_apache2(Path(self.charm_dir / 'templates'), 'nextcloud.conf.j2')
+        self._stored.apache_configured = True
 
     def _init_nextcloud(self):
         """
         Initializes nextcloud via the nextcloud occ interface.
         :return:
         """
-        self.unit.status = MaintenanceStatus("Begin initializing nextcloud...")
+        self.unit.status = MaintenanceStatus("initializing nextcloud...")
         ctx = {'dbtype': self._stored.dbtype,
                'dbname': self._stored.dbname,
                'dbhost': self._stored.dbhost,
@@ -314,7 +330,13 @@ class NextcloudCharm(CharmBase):
                'adminusername': self.config.get('admin-username'),
                'datadir': '/var/www/nextcloud/data'
                }
-        Occ.maintenance_install(ctx)
+        cp = Occ.maintenance_install(ctx)
+        if cp.returncode == 0:
+            self.unit.status = MaintenanceStatus("initialized nextcloud = OK.")
+        else:
+            self.unit.status = BlockedStatus("Initialization failed this is what I know: " + cp.stdout)
+            logger.error("Error while initializing nextcloud.")
+            sys.exit(-1)
 
     def _add_initial_trusted_domain(self):
         """
@@ -435,6 +457,17 @@ class NextcloudCharm(CharmBase):
         if self._stored.nextcloud_initialized:
             Occ.overwriteprotocol(self.config.get('overwriteprotocol'))
 
+    def _make_ocdata_for_occ(self):
+        """
+        This create a .ocdata file which nextcloud wants or will error
+        on all occ commands.
+        """
+        data_dir_path = os.path.join(NEXTCLOUD_ROOT, 'data')
+        ocdata_path = os.path.join(data_dir_path, '.ocdata')
+        if not os.path.exists(data_dir_path):
+            os.mkdir(data_dir_path)
+        if not os.path.exists(ocdata_path):
+            open(ocdata_path, 'a').close()
 
 if __name__ == "__main__":
     main(NextcloudCharm)
