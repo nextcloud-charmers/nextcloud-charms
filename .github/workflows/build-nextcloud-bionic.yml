@@ -17,13 +17,6 @@ jobs:
     - name: "Prepare OS for builds and unittests"
       run: |
         sudo apt-get install -y python3-setuptools python3-wheel
-    - name: "make nextcloud-lib"
-      run: |
-        make build-lib
-        # Successful build created: lib/dist/nextcloud-0.0.1-py3-none-any.whl
-        # We copy that to the nextcloud-charm which it needs in its requirements.txt.
-        mkdir -p charm-nextcloud/lib/dist/
-        cp lib/dist/nextcloud-0.0.1-py3-none-any.whl charm-nextcloud/lib/dist/
 
     - name: Unittest nextcloud
       run: |
