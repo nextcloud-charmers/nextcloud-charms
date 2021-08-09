@@ -1,0 +1,31 @@
+# Builds and runs unittests on ubuntu bionic.
+name: Nextcloud charm (charmcraft)
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-18.04
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: "Prepare OS for builds and unittests"
+      run: |
+        sudo apt-get install -y python3-setuptools python3-wheel
+
+    - name: Unittest nextcloud
+      run: |
+        #TODO: some of this should be moved to requireents-dev.txt
+        
+        # Install ...
+        cd operator-nextcloud
+        pip3 install wheel
+        pip3 install -r requirements.txt
+        pip3 install -r requirements-dev.txt
+        
+        sudo ./run_tests

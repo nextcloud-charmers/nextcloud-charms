@@ -1,11 +1,10 @@
 .idea/
-charm-nextcloud/build/
-nextcloud.charm
+operator-nextcloud/build/
 *.pyc
 *~
 *build*
 .tox/
-/charm-nextcloud/venv/
+/operator-nextcloud/venv/
 *charm
 *whl
 version
