@@ -20,7 +20,6 @@ from ops.model import (
     BlockedStatus,
     MaintenanceStatus,
     ModelError,
-    WaitingStatus
 )
 
 from nextcloud import utils
@@ -122,7 +121,7 @@ class NextcloudCharm(CharmBase):
         """
         self._config_apache()
         self._config_php()
-        #TODO: let only the leader do changes to config. overwiteprotocol should
+        # TODO: let only the leader do changes to config. overwiteprotocol should
         # go that way rather than locally get changed since it its inconsistent with
         # how the rest of the config is done..
         self._config_overwriteprotocol()
@@ -188,7 +187,7 @@ class NextcloudCharm(CharmBase):
             with open(NEXTCLOUD_CONFIG_PHP, "w") as f:
                 f.write(nextcloud_config)
 
-            #TODO: only create .ocdata file for debug since it scale out
+            # TODO: only create .ocdata file for debug since it scale out
             # will only work with a shared-fs like NFS.
             self._make_ocdata_for_occ()
 
@@ -245,13 +244,11 @@ class NextcloudCharm(CharmBase):
                 utils.set_nextcloud_permissions()
                 self._init_nextcloud()
                 self._add_initial_trusted_domain()
-                installed = Occ.status()['installed']
-                if installed:
-                    logger.debug("===== Nextcloud install_status: {}====".format(installed))
+                if self._is_nextcloud_installed():
                     self._stored.nextcloud_initialized = True
 
     def _on_start(self, event):
-        if not Occ.status()['installed']:
+        if not self._is_nextcloud_installed():
             logger.debug("Nextcloud not installed, defering start.")
             event.defer()
             return
@@ -275,7 +272,7 @@ class NextcloudCharm(CharmBase):
         This action places the site in maintenance mode to protect it
         while this action runs.
         """
-        #TODO: Only leader should place site in maintenance.
+        # TODO: Only leader should place site in maintenance.
         Occ.maintenance_mode(enable=True)
         o = Occ.db_convert_filecache_bigint()
         event.set_results({"occ-output": o})
@@ -373,8 +370,10 @@ class NextcloudCharm(CharmBase):
 
         else:
             if self.model.unit.is_leader():
-                self.unit.set_workload_version(Occ.status()['version'])
-            self.unit.status = ActiveStatus("Ready")
+                # Only leader need to set app version
+                self.unit.set_workload_version(self._nextcloud_version())
+            # Set the active status to the running version.
+            self.unit.status = ActiveStatus(self._nextcloud_version())
 
     def set_redis_info(self, info: dict):
         self._stored.redis_info = info
@@ -468,6 +467,14 @@ class NextcloudCharm(CharmBase):
             os.mkdir(data_dir_path)
         if not os.path.exists(ocdata_path):
             open(ocdata_path, 'a').close()
+
+    def _is_nextcloud_installed(self):
+        return json.loads(Occ.status().stdout)['installed']
+
+    def _nextcloud_version(self):
+        logger.debug("Determined nextcloud version: " + json.loads(Occ.status().stdout)['version'])
+        return json.loads(Occ.status().stdout)['version']
+
 
 if __name__ == "__main__":
     main(NextcloudCharm)
