@@ -3,4 +3,3 @@ ops-lib-pgsql
 xtarfile
 requests
 jinja2
-/root/project/nextcloud-0.0.1-py3-none-any.whl

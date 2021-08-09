@@ -57,7 +57,7 @@ def install_dependencies():
     elif 'bionic' == lsb_release.get_distro_information()['CODENAME']:
         _install_dependencies_bionic()
     else:
-        raise RuntimeError(f"No valid series found to install package dependencies for")
+        raise RuntimeError("No valid series found to install package dependencies for")
 
 
 def _install_dependencies_bionic():
@@ -181,7 +181,6 @@ def install_nfs_systemd_mount(templates_path, template, ctx):
     sp.call(['systemctl', 'daemon-reload'])
 
 
-
 def config_php(phpmod_context, templates_path, template):
     """
     Renders the phpmodule for nextcloud (nextcloud.ini)
@@ -234,13 +233,13 @@ def config_ceph(ceph_info, templates_path, template):
     target = Path('/var/www/nextcloud/config/ceph.config.php')
     target.write_text(template.render(ceph_info))
 
+
 def get_phpversion():
     """
     Get php version X.Y from the running system.
     Supports
     - 7.2 (bionic),
     - 7.4 (focal)
-
     :return: string
     """
     response = sp.check_output(['php', '-v']).decode()
@@ -250,4 +249,4 @@ def get_phpversion():
     elif "PHP 7.2" in lines[0]:
         return "7.2"
     else:
-        raise RuntimeError(f"No valid PHP version found in check")
+        raise RuntimeError("No valid PHP version found in check")

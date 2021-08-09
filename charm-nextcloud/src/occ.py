@@ -1,10 +1,10 @@
 import subprocess as sp
 from subprocess import CompletedProcess
 import logging
-import json
 import sys
 
 logger = logging.getLogger(__name__)
+
 
 class Occ:
 
@@ -18,7 +18,7 @@ class Occ:
                " trusted_domains {index}"
                " --value={domain} ").format(index=index, domain=domain)
         return sp.run(cmd.split(), cwd='/var/www/nextcloud',
-                        stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+                      stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
 
     @staticmethod
     def remove_trusted_domain(domain):
@@ -41,7 +41,7 @@ class Occ:
         cmd = "sudo -u www-data php /var/www/nextcloud/occ \
                                   config:system:delete trusted_domains"
         return sp.run(cmd.split(), cwd='/var/www/nextcloud',
-                        stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+                      stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
 
     @staticmethod
     def config_system_get_trusted_domains() -> CompletedProcess:
@@ -52,7 +52,7 @@ class Occ:
         cmd = "sudo -u www-data php /var/www/nextcloud/occ \
                            config:system:get trusted_domains"
         return sp.run(cmd.split(), cwd='/var/www/nextcloud',
-                        stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+                      stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
         # domains = output.stdout.split()
 
     @staticmethod
@@ -69,21 +69,21 @@ class Occ:
     def db_add_missing_indices() -> CompletedProcess:
         cmd = "sudo -u www-data php /var/www/nextcloud/occ db:add-missing-indices"
         return sp.run(cmd.split(), cwd='/var/www/nextcloud',
-                        stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+                      stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
 
     @staticmethod
     def db_convert_filecache_bigint() -> CompletedProcess:
         cmd = "sudo -u www-data php /var/www/nextcloud/occ \
                db:convert-filecache-bigint --no-interaction"
         return sp.run(cmd.split(), cwd='/var/www/nextcloud',
-                        stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+                      stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
 
     @staticmethod
     def maintenance_mode(enable) -> CompletedProcess:
         m = "--on" if enable else "--off"
         cmd = f"sudo -u www-data php /var/www/nextcloud/occ maintenance:mode {m}"
         return sp.run(cmd.split(), cwd='/var/www/nextcloud',
-                        stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+                      stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
 
     @staticmethod
     def maintenance_install(ctx) -> CompletedProcess:
@@ -98,11 +98,11 @@ class Occ:
                "--admin-pass {adminpassword} "
                "--data-dir {datadir} ").format(**ctx)
         cp = sp.run(cmd.split(), cwd='/var/www/nextcloud',
-                      stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+                    stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
         if not cp.returncode == 0:
             logger.error("Failed initializing nextcloud: " + str(cp))
         else:
-            #TODO: Dont log the cp object since it may have passwords in it. Strip it away here?
+            # TODO: Dont log the cp object since it may have passwords in it. Strip it away here?
             logger.info("Suceess initializing nextcloud: " + str(cp))
 
         return cp
@@ -114,8 +114,7 @@ class Occ:
         """
         cmd = "sudo -u www-data /usr/bin/php occ status --output=json --no-warnings"
         return sp.run(cmd.split(), cwd='/var/www/nextcloud',
-                        stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
-        #    returndict = json.loads(output.split()[-1])
+                      stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
 
     @staticmethod
     def overwriteprotocol(protocol='http') -> CompletedProcess:
@@ -127,7 +126,7 @@ class Occ:
             logger.info("Setting overwriteprotocol to: " + protocol)
             cmd = ("sudo -u www-data /usr/bin/php occ config:system:set overwriteprotocol --value=" + protocol)
             return sp.run(cmd.split(), cwd='/var/www/nextcloud',
-                            stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+                          stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
         else:
             logger.error("Unsupported overwriteprotocol provided as config: " + protocol)
             sys.exit(-1)
