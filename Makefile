@@ -11,11 +11,11 @@ clean: ## Remove .tox and build dirs
 	find . -iname "*.whl" -delete
 
 build: version  ## Build nextcloud charm
-	@charmcraft pack --project-dir charm-nextcloud
+	@charmcraft pack --project-dir operator-nextcloud
 
 .PHONY: version
 version: ## Generate version file
-	@git describe --tags --dirty --always > charm-nextcloud/version
+	@git describe --tags --dirty --always > operator-nextcloud/version
 
 # Display target comments in 'make help'
 help: 
