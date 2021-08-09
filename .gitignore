@@ -8,3 +8,4 @@ nextcloud.charm
 /charm-nextcloud/venv/
 *charm
 *whl
+version

@@ -22,8 +22,8 @@ from ops.model import (
     ModelError,
 )
 
-from nextcloud import utils
-from nextcloud.occ import Occ
+import utils
+from occ import Occ
 
 from interface_http import HttpProvider
 import interface_redis
