@@ -12,7 +12,7 @@ from ops.framework import (
     ObjectEvents,
 )
 
-from nextcloud import utils
+import utils
 
 logger = logging.getLogger()
 
