@@ -10,7 +10,7 @@ clean: ## Remove .tox and build dirs
 	rm -rf *.charm
 	find . -iname "*.whl" -delete
 
-build: build-lib ## Build nextcloud charm
+build: version build-lib ## Build nextcloud charm
 	@charmcraft pack --project-dir charm-nextcloud
 
 ## Build nextcloud private charm
@@ -23,6 +23,10 @@ build-lib:
 
 push-nextcloud-to-edge: ## Push charms to edge s3
 	@./scripts/push_charm.sh edge
+
+.PHONY: version
+version: ## Generate version file
+	@git describe --tags --dirty --always > charm-nextcloud/version
 
 # Display target comments in 'make help'
 help: 
