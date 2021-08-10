@@ -39,6 +39,11 @@ NEXTCLOUD_ROOT = os.path.abspath('/var/www/nextcloud')
 NEXTCLOUD_CONFIG_PHP = os.path.abspath('/var/www/nextcloud/config/config.php')
 NEXTCLOUD_CEPH_CONFIG_PHP = os.path.join(NEXTCLOUD_ROOT, 'config/ceph.config.php')
 
+EMOJI_ACTION_EVENT = "\U000026CF"
+EMOJI_CORE_HOOK_EVENT = "\U0001F4CC"
+EMOJI_RELATION_EVENT = "\U0001F9E9"
+EMOJI_CLOUD = "\U00002601"
+EMOJI_POSTGRES_EVENT = "\U0001F4BF"
 
 class NextcloudCharm(CharmBase):
     _stored = StoredState()
@@ -97,6 +102,7 @@ class NextcloudCharm(CharmBase):
             self.framework.observe(action, handler)
 
     def _on_install(self, event):
+        logger.debug(EMOJI_CORE_HOOK_EVENT + sys._getframe().f_code.co_name )
         self.unit.status = MaintenanceStatus("installing dependencies...")
         utils.install_dependencies()
         if not self._stored.nextcloud_fetched:
@@ -119,6 +125,7 @@ class NextcloudCharm(CharmBase):
         :param event:
         :return:
         """
+        logger.debug(EMOJI_CORE_HOOK_EVENT + sys._getframe().f_code.co_name )
         self._config_apache()
         self._config_php()
         # TODO: let only the leader do changes to config. overwiteprotocol should
@@ -141,6 +148,7 @@ class NextcloudCharm(CharmBase):
 
     # Only leader is running this hook (verify this)
     def _on_leader_elected(self, event):
+        logger.debug(EMOJI_CORE_HOOK_EVENT + sys._getframe().f_code.co_name )
         logger.debug("!!!!!!!! I'm new nextcloud leader !!!!!!!!")
         self.update_config_php_trusted_domains()
 
@@ -166,6 +174,7 @@ class NextcloudCharm(CharmBase):
             cluster_rel.data[self.app]['ceph_config'] = str(ceph_config)
 
     def _on_cluster_relation_joined(self, event):
+        logger.debug(EMOJI_CLOUD + sys._getframe().f_code.co_name)
         if self.model.unit.is_leader():
             if not self._stored.nextcloud_initialized:
                 event.defer()
@@ -178,6 +187,7 @@ class NextcloudCharm(CharmBase):
         When a change on the config happens:
         Pull in configs from the peer (cluster) relation and write it to local disk.
         """
+        logger.debug(EMOJI_CLOUD + sys._getframe().f_code.co_name)
         if not self.model.unit.is_leader():
             if 'nextcloud_config' not in event.relation.data[self.app]:
                 event.defer()
@@ -200,14 +210,17 @@ class NextcloudCharm(CharmBase):
             utils.set_nextcloud_permissions()
 
     def _on_cluster_relation_departed(self, event):
+        logger.debug(EMOJI_CLOUD + sys._getframe().f_code.co_name)
         self.framework.breakpoint('departed')
         if self.model.unit.is_leader():
             self.update_config_php_trusted_domains()
 
     def _on_cluster_relation_broken(self, event):
+        logger.debug(EMOJI_CLOUD + sys._getframe().f_code.co_name)
         pass
 
     def _on_master_changed(self, event: pgsql.MasterChangedEvent):
+        logger.debug(EMOJI_POSTGRES_EVENT + sys._getframe().f_code.co_name)
         self.unit.status = MaintenanceStatus("database master changed")
         if event.database != 'nextcloud':
             # Leader has not yet set requirements. Wait until next event,
@@ -226,8 +239,6 @@ class NextcloudCharm(CharmBase):
         # most charms will find it easier to just handle the Changed
         # events. event.master is None if the master database is not
         # available, or a pgsql.ConnectionString instance.
-
-        logger.debug("=== Database master_changed event ===")
 
         self._stored.db_conn_str = None if event.master is None else event.master.conn_str
         self._stored.db_uri = None if event.master is None else event.master.uri
@@ -248,6 +259,7 @@ class NextcloudCharm(CharmBase):
                     self._stored.nextcloud_initialized = True
 
     def _on_start(self, event):
+        logger.debug(EMOJI_CORE_HOOK_EVENT + sys._getframe().f_code.co_name )
         if not self._is_nextcloud_installed():
             logger.debug("Nextcloud not installed, defering start.")
             event.defer()
@@ -263,6 +275,7 @@ class NextcloudCharm(CharmBase):
     # ACTIONS
 
     def _on_add_missing_indices_action(self, event):
+        logger.debug(EMOJI_ACTION_EVENT + sys._getframe().f_code.co_name)
         o = Occ.db_add_missing_indices()
         event.set_results({"occ-output": o})
 
@@ -273,6 +286,7 @@ class NextcloudCharm(CharmBase):
         while this action runs.
         """
         # TODO: Only leader should place site in maintenance.
+        logger.debug(EMOJI_ACTION_EVENT + sys._getframe().f_code.co_name)
         Occ.maintenance_mode(enable=True)
         o = Occ.db_convert_filecache_bigint()
         event.set_results({"occ-output": o})
@@ -285,6 +299,7 @@ class NextcloudCharm(CharmBase):
         :param event: boolean
         :return:
         """
+        logger.debug(EMOJI_ACTION_EVENT + sys._getframe().f_code.co_name)
         o = Occ.maintenance_mode(enable=event.params['enable'])
         event.set_results({"occ-output": o})
 
@@ -353,6 +368,8 @@ class NextcloudCharm(CharmBase):
         """
         Evaluate the internal state to report on status.
         """
+        logger.debug(EMOJI_CORE_HOOK_EVENT + sys._getframe().f_code.co_name)
+
         if not self._stored.nextcloud_fetched:
             self.unit.status = BlockedStatus("Nextcloud not fetched.")
 
@@ -373,7 +390,7 @@ class NextcloudCharm(CharmBase):
                 # Only leader need to set app version
                 self.unit.set_workload_version(self._nextcloud_version())
             # Set the active status to the running version.
-            self.unit.status = ActiveStatus(self._nextcloud_version())
+            self.unit.status = ActiveStatus(self._nextcloud_version() + " " + EMOJI_CLOUD)
 
     def set_redis_info(self, info: dict):
         self._stored.redis_info = info
