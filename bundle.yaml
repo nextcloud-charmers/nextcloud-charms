@@ -1,4 +1,4 @@
-series: bionic
+series: focal
 applications:
   haproxy:
     charm: cs:haproxy-60

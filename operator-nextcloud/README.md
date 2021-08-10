@@ -1,28 +1,53 @@
-# nextcloud
+# Nextcloud
+The self-hosted productivity platform that keeps you in control of your data.
 
 ## Description
+The full documentation for this charm lives here: https://charmhub.io/nextcloud/docs
 
-TODO: fill out the description
+## Small scale deployment
+For a quick test of nextcloud, you can use this:
 
-## Usage
+    juju add-model my-nextcloud
+    juju model-config default-series=focal
+    juju deploy postgresql
+    juju deploy nextcloud
+    juju relate nextcloud:db postgresql:db
 
-TODO: explain how to use the charm
+    ... wait for deployment to settle.
+    Then, visit http://<yourip>
 
-### Scale Out Usage
+Default admin login is: _admin:mypassword_
 
-...
+## Large scale deployment
+For a full scale out deployment with support for shared storage, redis and SSL deployment, see: https://charmhub.io/nextcloud/docs
 
-## Developing
+## Supported deployment
+The authors of this charm provides fully supported, large scale [Nextcloud] installations in collaboration with [Kafit.se] 
+under a official partner program with [Nextcloud].
 
-Create and activate a virtualenv,
-and install the development requirements,
+Contact [Kafit.se] or [Erik Lönroth] for more information on professional supported solutions of Nextcloud. 
 
-    virtualenv -p python3 venv
-    source venv/bin/activate
-    pip install -r requirements-dev.txt
+Any installation growing above 100 users should consider a 
+enterprise license contract.
 
-## Testing
+## Contribute to this charm
+We love to see more people adding to the charm code. Let us know if you want to help develop it.
 
-Just run `run_tests`:
+https://github.com/nextcloud-charmers/nextcloud-charms
 
-    ./run_tests
+## Authors/Developers
+Some of the developers...
+
+[Erik Lönroth]
+
+Joakim Nyman
+
+Heitor Bittencourt
+
+## Attributions
+[Kafit.se] - Experts in Nextcloud and provides competence services. A partner with [Nextcloud] Ltd.
+[Nextcloud] - Develops and supports the community of Nextcloud.
+
+[Nextcloud]: https://nextcloud.com/
+[Kafit.se]: https://kafit.se/?lang=en
+[Erik Lönroth]: https://eriklonroth.com
