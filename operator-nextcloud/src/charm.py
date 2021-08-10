@@ -45,6 +45,7 @@ EMOJI_RELATION_EVENT = "\U0001F9E9"
 EMOJI_CLOUD = "\U00002601"
 EMOJI_POSTGRES_EVENT = "\U0001F4BF"
 
+
 class NextcloudCharm(CharmBase):
     _stored = StoredState()
 
@@ -102,7 +103,7 @@ class NextcloudCharm(CharmBase):
             self.framework.observe(action, handler)
 
     def _on_install(self, event):
-        logger.debug(EMOJI_CORE_HOOK_EVENT + sys._getframe().f_code.co_name )
+        logger.debug(EMOJI_CORE_HOOK_EVENT + sys._getframe().f_code.co_name)
         self.unit.status = MaintenanceStatus("installing dependencies...")
         utils.install_dependencies()
         if not self._stored.nextcloud_fetched:
@@ -125,7 +126,7 @@ class NextcloudCharm(CharmBase):
         :param event:
         :return:
         """
-        logger.debug(EMOJI_CORE_HOOK_EVENT + sys._getframe().f_code.co_name )
+        logger.debug(EMOJI_CORE_HOOK_EVENT + sys._getframe().f_code.co_name)
         self._config_apache()
         self._config_php()
         # TODO: let only the leader do changes to config. overwiteprotocol should
@@ -148,7 +149,7 @@ class NextcloudCharm(CharmBase):
 
     # Only leader is running this hook (verify this)
     def _on_leader_elected(self, event):
-        logger.debug(EMOJI_CORE_HOOK_EVENT + sys._getframe().f_code.co_name )
+        logger.debug(EMOJI_CORE_HOOK_EVENT + sys._getframe().f_code.co_name)
         logger.debug("!!!!!!!! I'm new nextcloud leader !!!!!!!!")
         self.update_config_php_trusted_domains()
 
@@ -259,7 +260,7 @@ class NextcloudCharm(CharmBase):
                     self._stored.nextcloud_initialized = True
 
     def _on_start(self, event):
-        logger.debug(EMOJI_CORE_HOOK_EVENT + sys._getframe().f_code.co_name )
+        logger.debug(EMOJI_CORE_HOOK_EVENT + sys._getframe().f_code.co_name)
         if not self._is_nextcloud_installed():
             logger.debug("Nextcloud not installed, defering start.")
             event.defer()
