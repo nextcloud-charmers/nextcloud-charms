@@ -1,5 +1,5 @@
-ops
-ops-lib-pgsql
-xtarfile
-requests
-jinja2
+ops==1.2.0
+ops-lib-pgsql==1.4
+xtarfile==0.1.0
+requests==2.26.0
+jinja2==2.8
