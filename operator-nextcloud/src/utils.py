@@ -161,7 +161,7 @@ def config_apache2(templates_path, template):
     ctx = {}
     target.write_text(template.render(ctx))
     # Enable required modules.
-    for module in ['rewrite', 'headers', 'env', 'dir', 'mime']:
+    for module in ['rewrite', 'headers', 'env', 'dir', 'mime', 'setenvif', 'proxy_fcgi']:
         sp.call(['a2enmod', module])
     # Disable default site
     sp.check_call(['a2dissite', '000-default'])
