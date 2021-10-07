@@ -75,7 +75,7 @@ def _install_dependencies_bionic():
                     'php7.2-curl',
                     'php7.2-mbstring',
                     'php7.2-intl',
-                    'php-imagick',
+                    'php7.2-imagick',
                     'php7.2-zip',
                     'php7.2-xml',
                     'php-apcu',
@@ -114,6 +114,7 @@ def _install_dependencies_focal():
                     'php7.4-gmp',
                     'php7.4-bz2',
                     'php7.4-bcmath',
+                    'php7.4-imagick',
                     'php-pear']
         command = ["sudo", "apt", "install", "-y"]
         command.extend(packages)

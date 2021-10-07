@@ -9,6 +9,7 @@ import os
 import socket
 from pathlib import Path
 import json
+import re
 
 from ops.charm import CharmBase
 from ops.main import main
@@ -487,7 +488,9 @@ class NextcloudCharm(CharmBase):
             open(ocdata_path, 'a').close()
 
     def _is_nextcloud_installed(self):
-        return json.loads(Occ.status().stdout)['installed']
+        status = Occ.status()
+        match = re.findall(r'\{.*?\}', status.stdout)
+        return json.loads(match[0])['installed']
 
     def _nextcloud_version(self):
         logger.debug("Determined nextcloud version: " + json.loads(Occ.status().stdout)['version'])
