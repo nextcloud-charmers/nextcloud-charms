@@ -8,10 +8,11 @@ clean: ## Remove .tox and build dirs
 	rm -rf .tox/
 	rm -rf venv/
 	rm -rf *.charm
+	rm operator-nextcloud/version
 	find . -iname "*.whl" -delete
 
 build: version  ## Build nextcloud charm
-	@charmcraft pack --project-dir operator-nextcloud
+	@charmcraft -v pack --project-dir operator-nextcloud
 
 .PHONY: version
 version: ## Generate version file
@@ -19,7 +20,7 @@ version: ## Generate version file
 
 # Display target comments in 'make help'
 help: 
-	grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 # SETTINGS
 # Use one shell for all commands in a target recipe
