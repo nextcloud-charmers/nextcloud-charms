@@ -2,11 +2,12 @@
 # See LICENSE file for licensing details.
 name: nextcloud
 description: |
-  Nextcloud goes here
+  Nextcloud productivity platform for private data and clouds.
 summary: |
-  Docs goes here
+  The full documentation for this charm lives here: https://charmhub.io/nextcloud/docs
 series: [bionic, focal]
 
+docs: https://discourse.charmhub.io/t/nextcloud-docs-index/4591
 
 provides:
   website:
