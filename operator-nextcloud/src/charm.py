@@ -235,6 +235,9 @@ class NextcloudCharm(CharmBase):
         if not self.model.unit.is_leader():
             self._stored.nextcloud_initialized = True
             self._stored.database_available = True
+
+            # Perform a status update to indicate the status.
+            self._on_update_status(event)
             return
         # The connection to the primary database has been created,
         # changed or removed. More specific events are available, but
