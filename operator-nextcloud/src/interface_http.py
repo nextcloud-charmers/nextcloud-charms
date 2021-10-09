@@ -3,11 +3,13 @@
 
 from ops.framework import Object
 from ops.charm import RelationBrokenEvent, RelationDepartedEvent
-
 import logging
 
+
 class HttpProvider(Object):
-    """Http interface provider interface."""
+    """
+    Http interface provider interface.
+    """
 
     def __init__(self, charm, relation_name, hostname="", port=80):
         """Set the initial data.
@@ -29,7 +31,6 @@ class HttpProvider(Object):
         self.framework.observe(
             charm.on[relation_name].relation_broken, self._on_relation_broken
         )
-
 
     def _on_relation_joined(self, event):
         """
