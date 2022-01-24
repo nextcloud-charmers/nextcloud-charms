@@ -60,6 +60,11 @@ def install_dependencies():
         raise RuntimeError("No valid series found to install package dependencies for")
 
 
+def install_apt_update():
+    command = ["sudo", "apt", "update", "-y"]
+    sp.run(command, check=True)
+
+
 def _install_dependencies_bionic():
     """
     Install packages that is needed by nextcloud to work with this charm.
