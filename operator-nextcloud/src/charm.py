@@ -106,6 +106,7 @@ class NextcloudCharm(CharmBase):
     def _on_install(self, event):
         logger.debug(EMOJI_CORE_HOOK_EVENT + sys._getframe().f_code.co_name)
         self.unit.status = MaintenanceStatus("installing dependencies...")
+        utils.install_apt_update()
         utils.install_dependencies()
         if not self._stored.nextcloud_fetched:
             # Fetch nextcloud to /var/www/

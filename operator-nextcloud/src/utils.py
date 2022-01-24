@@ -60,6 +60,11 @@ def install_dependencies():
         raise RuntimeError("No valid series found to install package dependencies for")
 
 
+def install_apt_update():
+    command = ["sudo", "apt", "update", "-y"]
+    sp.run(command, check=True)
+
+
 def _install_dependencies_bionic():
     """
     Install packages that is needed by nextcloud to work with this charm.
@@ -99,7 +104,6 @@ def _install_dependencies_focal():
         packages = ['apache2',
                     'libapache2-mod-php7.4',
                     'php7.4-fpm',
-                    'php7.4-fpm',
                     'php7.4-intl',
                     'php7.4-ldap',
                     'php7.4-imap',
@@ -115,7 +119,9 @@ def _install_dependencies_focal():
                     'php7.4-bz2',
                     'php7.4-bcmath',
                     'php7.4-imagick',
-                    'php-pear']
+                    'php-pear',
+                    'php-apcu',
+                    'php-redis']
         command = ["sudo", "apt", "install", "-y"]
         command.extend(packages)
         sp.run(command, check=True)
