@@ -1,0 +1,31 @@
+=== Generate certificate with letsencrypt and add with certbot ===
+
+Step 0 - Login to your DNS provider, you will add a TXT record to your domain as:
+  _acme-challenge.ncdemo.lonroth.net
+
+Step 1: 
+    sudo certbot certonly --manual --preferred-challenges dns -d "ncdemo.lonroth.net" --non-interactive --agree-tos --email
+
+Step 2: You will get a text string. Add it to your DNS as a TXT record.
+
+Step 3: Wait for the DNS:s to be available: You can test until it appears:
+   nslookup -type=A _acme-challenge.ncdemo.lonroth.net
+
+Step 4: Continute the certbot registration.
+
+Step 5: Add script: /etc/letsencrypt/renewal-hooks/post/haproxy-renew-ssl.sh
+
+#!/bin/bash
+sudo cat "/etc/letsencrypt/live/ncdemo.lonroth.net/fullchain.pem" "/etc/letsencrypt/live/ncdemo.lonroth.net/privkey.pem" > "/var/lib/haproxy/default.pem"
+sudo systemctl restart haproxy.service
+
+Step 6: Modify /etc/letsencrypt/renewal/ncdemo.lonroth.net.conf to add a directive:
+[renewalparams]
+...
+post_hook = sudo bash /etc/letsencrypt/renewal-hooks/post/haproxy-renew-ssl.sh
+
+
+Step 7: Edit /etc/crontab
+
+15 7 * * 1 root certbot renew >> /var/log/certbot-renew.log
+
