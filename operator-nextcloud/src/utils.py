@@ -70,6 +70,27 @@ def install_apt_update():
     sp.run(command, check=True)
 
 
+def install_backup_dependencies():
+    try:
+        packages = ['pigz',
+                    'postgresql-client',
+                    'python3-pip']
+        command = ["sudo", "apt", "install", "-y"]
+        command.extend(packages)
+        sp.run(command, check=True)
+    except sp.CalledProcessError as e:
+        print(e)
+        sys.exit(-1)
+    try:
+        packages = ['pdpyras==4.4.0']
+        command = ["sudo", "pip3", "install"]
+        command.extend(packages)
+        sp.run(command, check=True)
+    except sp.CalledProcessError as e:
+        print(e)
+        sys.exit(-1)
+
+
 def _install_dependencies_bionic():
     """
     Install packages that is needed by nextcloud to work with this charm.
@@ -262,3 +283,41 @@ def get_phpversion():
         return "7.2"
     else:
         raise RuntimeError("No valid PHP version found in check")
+
+
+def config_backup(config, data_dir_path, db_host, db_user, db_pass):
+    """
+    Installs backup scripts and cronjob for scheduled backups.
+    """
+    # Replace all backup scripts with new ones from the charm.
+    sp.check_call("rm -rf /root/scripts/backup", shell=True)
+    sp.check_call("mkdir -p /root/scripts/backup", shell=True)
+    sp.check_call("cp -r scripts/backup/* /root/scripts/backup/", shell=True)
+    sp.check_call("cp scripts/backup/backup-cron /etc/cron.d/", shell=True)
+
+    # Configuring run_backup.sh script
+    run_backup_info = {
+        "backup_host": config.get("backup-host"),
+        "slack_webhook": config.get("backup-slack-webhook"),
+        "pagerduty_serviceid": config.get("backup-pagerduty-serviceid"),
+        "pagerduty_token": config.get("backup-pagerduty-token"),
+        "pagerduty_email": config.get("backup-pagerduty-email")
+    }
+    template = jinja2.Environment(
+        loader=jinja2.FileSystemLoader("scripts/backup")
+    ).get_template("run_backup.sh")
+    target = Path('/root/scripts/backup/run_backup.sh')
+    target.write_text(template.render(run_backup_info))
+
+    # Configuring Nextcloud-Backup-Restore.conf
+    backup_conf_info = {
+        "data_dir": data_dir_path,
+        "db_host": db_host,
+        "db_user": db_user,
+        "db_pass": db_pass
+    }
+    template = jinja2.Environment(
+        loader=jinja2.FileSystemLoader("scripts/backup/Nextcloud-Backup-Restore")
+    ).get_template("NextcloudBackupRestore.conf")
+    target = Path('/root/scripts/backup/Nextcloud-Backup-Restore/NextcloudBackupRestore.conf')
+    target.write_text(template.render(backup_conf_info))
