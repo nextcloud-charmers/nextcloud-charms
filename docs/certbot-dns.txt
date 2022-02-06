@@ -4,7 +4,7 @@ Step 0 - Login to your DNS provider, you will add a TXT record to your domain as
   _acme-challenge.ncdemo.lonroth.net
 
 Step 1: 
-    sudo certbot certonly --standalone --preferred-challenges dns -d "ncdemo.lonroth.net" --non-interactive --agree-tos --email
+    sudo certbot certonly --manual --preferred-challenges dns -d "ncdemo.lonroth.net" --agree-tos --email info@dwellir.com
 
 Step 2: You will get a text string. Add it to your DNS as a TXT record.
 
@@ -16,7 +16,7 @@ Step 4: Continute the certbot registration.
 Step 5: Add script: /etc/letsencrypt/renewal-hooks/post/haproxy-renew-ssl.sh
 
 #!/bin/bash
-sudo cat "/etc/letsencrypt/live/ncdemo.lonroth.net/fullchain.pem" "/etc/letsencrypt/live/ncdemo.lonroth.net/privkey.pem" > "/var/lib/haproxy/default.pem"
+sudo cat /etc/letsencrypt/live/ncdemo.lonroth.net/fullchain.pem /etc/letsencrypt/live/ncdemo.lonroth.net/privkey.pem > /var/lib/haproxy/default.pem
 sudo systemctl restart haproxy.service
 
 Step 6: Modify /etc/letsencrypt/renewal/ncdemo.lonroth.net.conf to add a directive:
