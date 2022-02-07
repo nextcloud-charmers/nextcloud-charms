@@ -3,6 +3,7 @@
 # See LICENSE file for licensing details.
 
 if [ -z "$VIRTUAL_ENV" -a -d venv/ ]; then
+    echo "Running from a venv"
     . venv/bin/activate
 fi
 
