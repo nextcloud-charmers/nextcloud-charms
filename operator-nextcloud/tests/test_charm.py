@@ -5,7 +5,7 @@ import unittest
 from ops.testing import Harness
 # from unittest.mock import Mock
 # sys.path.append('./src')
-import charm
+from charm import NextcloudCharm
 
 
 class TestCharm(unittest.TestCase):
@@ -36,7 +36,7 @@ class TestCharm(unittest.TestCase):
     #     self.assertEqual(action_event.fail.call_args, [("fail this",)])
 
     def test_leader_install_hook(self):
-        harness = Harness(charm.NextcloudCharm)
+        harness = Harness(NextcloudCharm)
         harness.set_leader(True)
         harness.begin()
         harness.charm.on.install.emit()
