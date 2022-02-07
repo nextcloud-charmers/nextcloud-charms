@@ -292,8 +292,6 @@ class NextcloudCharm(CharmBase):
     def _on_datadir_storage_detaching(self, event):
         logger.debug(EMOJI_COMPUTER_DISK + sys._getframe().f_code.co_name)
         pass
-            
-    # ACTIONS
 
     def _on_add_missing_indices_action(self, event):
         logger.debug(EMOJI_ACTION_EVENT + sys._getframe().f_code.co_name)
@@ -500,7 +498,7 @@ class NextcloudCharm(CharmBase):
         on all occ commands.
         """
         if not self._stored.nextcloud_datadir.exists():
-            p.mkdir()
+            self._stored.nextcloud_datadir.mkdir()
         if not self._stored.nextcloud_datadir.joinpath('.ocdata').exists():
             self._stored.nextcloud_datadir.joinpath('.ocdata').touch()
 
