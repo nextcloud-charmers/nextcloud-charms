@@ -40,4 +40,4 @@ class TestCharm(unittest.TestCase):
         harness.set_leader(True)
         harness.begin()
         harness.charm.on.install.emit()
-        # self.assertTrue(harness.charm._stored.nextcloud_fetched)
+        self.assertTrue(harness.charm._stored.nextcloud_fetched)
