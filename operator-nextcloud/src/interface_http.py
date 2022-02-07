@@ -7,6 +7,7 @@ import logging
 from jinja2 import Environment
 import yaml
 
+
 class HttpProvider(Object):
     """
     Http interface provider interface.
@@ -76,13 +77,10 @@ class HttpProvider(Object):
 
     def _renderServicesYaml(self):
         YAML = self._haproxyServicesYaml
-        
         ip = str(self.model.get_binding("website").network.bind_address)
-
         r = Environment().from_string(YAML).render(address=ip,
                                                    port=self._port,
                                                    unitid=self.model.unit.name.rsplit('/', 1)[1])
-
         try:
             return str(yaml.safe_load(r))
         except yaml.YAMLError as exc:
