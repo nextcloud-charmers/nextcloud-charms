@@ -1,4 +1,5 @@
-import sys, os
+import sys
+import os
 path = os.path.dirname(__file__)
 path = os.path.join(path, 'src')
 if path not in sys.path:
