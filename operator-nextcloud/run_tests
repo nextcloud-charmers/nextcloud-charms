@@ -7,10 +7,11 @@ if [ -z "$VIRTUAL_ENV" -a -d venv/ ]; then
 fi
 
 if [ -z "$PYTHONPATH" ]; then
-    export PYTHONPATH=src
+    export PYTHONPATH="./src"
 else
-    export PYTHONPATH="src:$PYTHONPATH"
+    export PYTHONPATH="./src:$PYTHONPATH"
 fi
 
+echo "PYTHONPATH=$PYTHONPATH"
 python3 -m flake8 --ignore E501 -v "$@"
 python3 -m unittest -v "$@"

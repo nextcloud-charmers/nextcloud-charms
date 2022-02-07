@@ -1,10 +1,10 @@
 # Copyright 2020 Erik Lönroth
 # See LICENSE file for licensing details.
-
+# import sys
 import unittest
-# from unittest.mock import Mock
-
 from ops.testing import Harness
+# from unittest.mock import Mock
+# sys.path.append('./src')
 from charm import NextcloudCharm
 
 
