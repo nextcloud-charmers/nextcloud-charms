@@ -1,8 +1,10 @@
+# import sys
 import os
-import utils
 import unittest
 import threading
 from http.server import SimpleHTTPRequestHandler, HTTPServer
+# sys.path.append('./src')
+import utils
 
 
 class TestUtils(unittest.TestCase):

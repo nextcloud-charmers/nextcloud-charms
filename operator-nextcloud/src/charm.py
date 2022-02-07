@@ -45,6 +45,7 @@ EMOJI_CORE_HOOK_EVENT = "\U0001F4CC"
 EMOJI_RELATION_EVENT = "\U0001F9E9"
 EMOJI_CLOUD = "\U00002601"
 EMOJI_POSTGRES_EVENT = "\U0001F4BF"
+EMOJI_COMPUTER_DISK = "\U0001F4BD"
 
 
 class NextcloudCharm(CharmBase):
@@ -55,7 +56,7 @@ class NextcloudCharm(CharmBase):
         self.db = pgsql.PostgreSQLClient(self, 'db')  # 'db' relation in metadata.yaml
         # The website provider takes care of incoming relations on the http interface.
         self.website = HttpProvider(self, 'website', socket.getfqdn(), 80)
-        self._stored.set_default(data_dir='/var/www/nextcloud/data/',
+        self._stored.set_default(nextcloud_datadir='/var/www/nextcloud/data/',
                                  nextcloud_fetched=False,
                                  nextcloud_initialized=False,
                                  database_available=False,
@@ -77,7 +78,9 @@ class NextcloudCharm(CharmBase):
             self.on.cluster_relation_departed: self._on_cluster_relation_departed,
             self.on.cluster_relation_broken: self._on_cluster_relation_broken,
             self.on.set_trusted_domain_action: self._on_set_trusted_domain_action,
-            self.on.ceph_relation_changed: self._on_ceph_relation_changed
+            self.on.ceph_relation_changed: self._on_ceph_relation_changed,
+            self.on.datadir_storage_attached: self._on_datadir_storage_attached,
+            self.on.datadir_storage_detaching: self._on_datadir_storage_detaching
         }
 
         # Relation: redis (Interface: redis)
@@ -117,7 +120,7 @@ class NextcloudCharm(CharmBase):
             except ModelError:
                 self.unit.status = MaintenanceStatus("installing (from network).")
                 utils.fetch_and_extract_nextcloud(self.config.get('nextcloud-tarfile'))
-            utils.set_nextcloud_permissions()
+            utils.set_nextcloud_permissions(self)
             self.unit.status = MaintenanceStatus("installed")
             self._stored.nextcloud_fetched = True
 
@@ -210,7 +213,7 @@ class NextcloudCharm(CharmBase):
                     f.write(ceph_config)
 
             # Since config comes via root, we need to fix the perms here.
-            utils.set_nextcloud_permissions()
+            utils.set_nextcloud_permissions(self)
 
     def _on_cluster_relation_departed(self, event):
         logger.debug(EMOJI_CLOUD + sys._getframe().f_code.co_name)
@@ -258,7 +261,7 @@ class NextcloudCharm(CharmBase):
         if event.master and event.database == 'nextcloud':
             self._stored.database_available = True
             if not self._stored.nextcloud_initialized:
-                utils.set_nextcloud_permissions()
+                utils.set_nextcloud_permissions(self)
                 self._init_nextcloud()
                 self._add_initial_trusted_domain()
                 if self._is_nextcloud_installed():
@@ -278,7 +281,17 @@ class NextcloudCharm(CharmBase):
             print(e)
             sys.exit(-1)
 
-    # ACTIONS
+    def _on_datadir_storage_attached(self, event):
+        """
+        If this event is fired, we are told to use a custom datadir.
+        So, we set that here for this charm and remember that.
+        """
+        logger.debug(EMOJI_COMPUTER_DISK + sys._getframe().f_code.co_name)
+        self._stored.nextcloud_datadir = str(event.storage.location)
+
+    def _on_datadir_storage_detaching(self, event):
+        logger.debug(EMOJI_COMPUTER_DISK + sys._getframe().f_code.co_name)
+        pass
 
     def _on_add_missing_indices_action(self, event):
         logger.debug(EMOJI_ACTION_EVENT + sys._getframe().f_code.co_name)
@@ -346,7 +359,7 @@ class NextcloudCharm(CharmBase):
                'dbuser': self._stored.dbuser,
                'adminpassword': self.config.get('admin-password'),
                'adminusername': self.config.get('admin-username'),
-               'datadir': '/var/www/nextcloud/data'
+               'datadir': str(self._stored.nextcloud_datadir)
                }
         cp = Occ.maintenance_install(ctx)
         if cp.returncode == 0:
@@ -484,12 +497,10 @@ class NextcloudCharm(CharmBase):
         This create a .ocdata file which nextcloud wants or will error
         on all occ commands.
         """
-        data_dir_path = os.path.join(NEXTCLOUD_ROOT, 'data')
-        ocdata_path = os.path.join(data_dir_path, '.ocdata')
-        if not os.path.exists(data_dir_path):
-            os.mkdir(data_dir_path)
-        if not os.path.exists(ocdata_path):
-            open(ocdata_path, 'a').close()
+        if not self._stored.nextcloud_datadir.exists():
+            self._stored.nextcloud_datadir.mkdir()
+        if not self._stored.nextcloud_datadir.joinpath('.ocdata').exists():
+            self._stored.nextcloud_datadir.joinpath('.ocdata').touch()
 
     def _is_nextcloud_installed(self):
         status = Occ.status()

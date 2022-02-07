@@ -27,5 +27,6 @@ jobs:
         pip3 install wheel
         pip3 install -r requirements.txt
         pip3 install -r requirements-dev.txt
-        
-        sudo ./run_tests
+
+        # preserve environment since we also run functional tests here needing root but also env.
+        sudo -preserve-env ./run_tests
