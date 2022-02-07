@@ -7,6 +7,7 @@ import tarfile
 from pathlib import Path
 import jinja2
 import io
+# from charm import NextcloudCharm
 
 
 def _modify_port(start=None, end=None, protocol='tcp', hook_tool="open-port"):
@@ -40,9 +41,13 @@ def close_port(start, end=None, protocol="tcp"):
     _modify_port(start, end, protocol=protocol, hook_tool="close-port")
 
 
-def set_nextcloud_permissions():
-    cmd = "chown -R www-data:www-data /var/www/nextcloud"
-    sp.run(cmd.split(), cwd='/var/www/nextcloud')
+def set_nextcloud_permissions(charm):
+    """
+    Set ownershow to www-data for nextcloud locations.
+    """
+    _datadir = str(charm._stored.nextcloud_datadir)
+    cmd = ['chown', '-R', 'www-data:www-data', '/var/www/nextcloud', _datadir]
+    sp.run(cmd, cwd='/var/www/nextcloud')
 
 
 def install_dependencies():
