@@ -43,10 +43,9 @@ class HttpProvider(Object):
         give the haproxy this information until we are really
         """
         haproxy_ip = event.relation.data[event.unit]['private-address']
-        logging.debug("Joining with haproxy: " + haproxy_ip )
+        logging.debug("Joining with haproxy: " + haproxy_ip)
 
         # TODO: We can add this to trustred proxies here
-
 
     def _on_relation_changed(self, event):
         if not self.charm._is_nextcloud_installed():
