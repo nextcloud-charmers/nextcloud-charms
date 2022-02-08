@@ -102,7 +102,7 @@ class Occ:
 
         # Remove potential passwords from reaching the log.
         cp.args[13]='*********'
-        cp.args[19]='*********' 
+        cp.args[19]='*********'
 
         if not cp.returncode == 0:
             logger.error("Failed initializing nextcloud: " + str(cp))
