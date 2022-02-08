@@ -1,0 +1,22 @@
+- service_name: nextcloud
+  service_host: 0.0.0.0
+  service_port: 443
+  crts: [DEFAULT]
+  service_options:
+      - balance leastconn
+      - option forwardfor
+      - http-request set-header X-Forwarded-Port %[dst_port]
+      - http-request add-header X-Forwarded-Proto https if { ssl_fc }
+      - acl url_discovery path /.well-known/caldav /.well-known/carddav
+      - http-request redirect location /remote.php/dav/ code 301 if url_discovery
+      - http-response set-header Strict-Transport-Security max-age=31536000;\ includeSubdomains;\ preload
+      - http-response set-header X-Frame-Options DENY
+      - http-response set-header X-Content-Type-Options nosniff
+      - http-response set-header X-Frame-Options SAMEORIGIN
+      - option forwardfor header X-Real-IP
+      - http-response set-header Strict-Transport-Security max-age=16000000;\ includeSubDomains;\ preload;
+      - http-request set-header X-Forwarded-Port %[dst_port]
+      - http-request add-header X-Forwarded-Proto https if { ssl_fc }
+      - http-check expect status 200
+  server_options: 
+     - cookie S{i} check
