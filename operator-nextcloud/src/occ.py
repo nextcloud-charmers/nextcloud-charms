@@ -99,13 +99,17 @@ class Occ:
                "--data-dir {datadir} ").format(**ctx)
         cp = sp.run(cmd.split(), cwd='/var/www/nextcloud',
                     stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+
+        # Remove potential passwords from reaching the log.
+        cp.args[13]='*********'
+        cp.args[19]='*********' 
+
         if not cp.returncode == 0:
             logger.error("Failed initializing nextcloud: " + str(cp))
         else:
             # TODO: Dont log the cp object since it may have passwords in it. Strip it away here?
             logger.info("Suceess initializing nextcloud: " + str(cp))
 
-        cp.args=['REMOVED'] # Remove potential password from reaching the log.
         return cp
 
     @staticmethod
