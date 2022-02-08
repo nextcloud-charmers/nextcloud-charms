@@ -105,6 +105,7 @@ class Occ:
             # TODO: Dont log the cp object since it may have passwords in it. Strip it away here?
             logger.info("Suceess initializing nextcloud: " + str(cp))
 
+        cp.args=['REMOVED'] # Remove potential password from reaching the log.
         return cp
 
     @staticmethod
