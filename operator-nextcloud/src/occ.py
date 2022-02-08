@@ -101,8 +101,8 @@ class Occ:
                     stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
 
         # Remove potential passwords from reaching the log.
-        cp.args[13]='*********'
-        cp.args[19]='*********'
+        cp.args[13] = '*********'
+        cp.args[19] = '*********'
 
         if not cp.returncode == 0:
             logger.error("Failed initializing nextcloud: " + str(cp))
