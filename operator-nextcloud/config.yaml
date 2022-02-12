@@ -53,3 +53,28 @@ options:
     default: http
     description: >
       Set this to https if you place a ssl-termination proxy in front of your nextcloud instance.
+  backup-host:
+    type: string
+    default: ''
+    description: >
+      Host where to send backups.
+  backup-slack-webhook:
+    type: string
+    default: ''
+    description: >
+      Webhook to Slack channel for sending backup status.
+  backup-pagerduty-serviceid:
+    type: string
+    default: ''
+    description: >
+      PagerDuty service ID for backup failure alarms.
+  backup-pagerduty-token:
+    type: string
+    default: ''
+    description: >
+      PagerDuty token for backup failure alarms.
+  backup-pagerduty-email:
+    type: string
+    default: ''
+    description: >
+      PagerDuty service email for backup failure alarms.

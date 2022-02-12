@@ -111,6 +111,7 @@ class NextcloudCharm(CharmBase):
         self.unit.status = MaintenanceStatus("installing dependencies...")
         utils.install_apt_update()
         utils.install_dependencies()
+        utils.install_backup_dependencies()
         if not self._stored.nextcloud_fetched:
             # Fetch nextcloud to /var/www/
             try:
@@ -139,6 +140,10 @@ class NextcloudCharm(CharmBase):
         # how the rest of the config is done..
         self._config_overwriteprotocol()
         sp.check_call(['systemctl', 'restart', 'apache2.service'])
+        if self.config.get('backup-host') and self._stored.nextcloud_initialized and self._stored.database_available:
+            self.unit.status = MaintenanceStatus("Configuring backup")
+            utils.config_backup(self.config, self._stored.nextcloud_datadir, self._stored.dbhost,
+                                self._stored.dbuser, self._stored.dbpass)
         self._on_update_status(event)
 
     def _on_database_relation_joined(self, event: pgsql.DatabaseRelationJoinedEvent):

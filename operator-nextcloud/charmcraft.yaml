@@ -10,3 +10,7 @@ bases:
       - name: ubuntu
         channel: "18.04"
         architectures: [amd64]
+parts:
+  charm:
+    prime: 
+      - scripts
