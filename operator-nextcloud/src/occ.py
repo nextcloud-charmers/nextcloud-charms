@@ -9,6 +9,31 @@ logger = logging.getLogger(__name__)
 class Occ:
 
     @staticmethod
+    def delete_trusted_proxies() -> CompletedProcess:
+        """
+        Removes all trusted_proxies from config via occ.
+        """
+        cmd = ("sudo -u www-data php /var/www/nextcloud/occ config:system:set"
+               " trusted_proxies "
+               " --value=''")
+        return sp.run(cmd.split(), cwd='/var/www/nextcloud',
+                      stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+
+    @staticmethod
+    def set_trusted_proxy(host, index) -> CompletedProcess:
+        """
+        Sets a trusted proxy on the given index.
+        """
+        #
+        # TODO: Check that the input is really a IP or host.
+        #
+        cmd = ("sudo -u www-data php /var/www/nextcloud/occ config:system:set"
+               " trusted_proxies {index}"
+               " --value={host} ").format(index=index, host=host)
+        return sp.run(cmd.split(), cwd='/var/www/nextcloud',
+                      stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+
+    @staticmethod
     def config_system_set_trusted_domains(domain, index) -> CompletedProcess:
         """
         Adds a trusted domain to nextcloud config.php with occ
@@ -135,3 +160,12 @@ class Occ:
         else:
             logger.error("Unsupported overwriteprotocol provided as config: " + protocol)
             sys.exit(-1)
+
+    @staticmethod
+    def setBackgroundCron() -> CompletedProcess:
+        """
+        Sets the background job scheulder to cron
+        """
+        cmd = "sudo -u www-data /usr/bin/php occ background:cron --no-warnings"
+        return sp.run(cmd.split(), cwd='/var/www/nextcloud',
+                      stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)

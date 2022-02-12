@@ -1,11 +1,13 @@
 import subprocess as sp
+from subprocess import CompletedProcess
 import sys
-
+import os
 import lsb_release
 import requests
 import tarfile
 from pathlib import Path
 import jinja2
+import json
 import io
 # from charm import NextcloudCharm
 
@@ -321,3 +323,67 @@ def config_backup(config, data_dir_path, db_host, db_user, db_pass):
     ).get_template("NextcloudBackupRestore.conf")
     target = Path('/root/scripts/backup/Nextcloud-Backup-Restore/NextcloudBackupRestore.conf')
     target.write_text(template.render(backup_conf_info))
+
+
+def getTrustedProxies():
+    """
+    Returns a json object with the trusted_proxies
+    """
+    cmd = ("sudo -u www-data php /var/www/nextcloud/occ config:system:get trusted_proxies --output=json")
+    s = sp.run(cmd.split(), cwd='/var/www/nextcloud',
+               stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+    # Load an empty dict into json if no trusted proxy exists.
+    if s.stdout == '':
+        return json.loads(str(dict()))
+    return json.loads(s.stdout)
+
+
+def addTrustedProxy(host):
+    """
+    Adds a trusted proxy to nextcloud config.php.
+    """
+    curmax = len(getTrustedProxies())
+    setTrustedProxy(host, curmax + 1)
+
+
+def deleteTrustedProxies() -> CompletedProcess:
+    """
+    Removes all trusted_proxies from config via occ by setting an empty value.
+    """
+    cmd = ("sudo -u www-data php /var/www/nextcloud/occ config:system:set"
+           " trusted_proxies "
+           " --value=")
+    return sp.run(cmd.split(), cwd='/var/www/nextcloud',
+                  stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+
+
+def deleteTrustedProxy(host) -> CompletedProcess:
+    """
+    Removes a host from trusted_proxies.
+    Returns:
+    """
+    ps = getTrustedProxies()
+    for (idx, val) in ps.items():
+        if val == host:
+            cmd = ("sudo -u www-data php /var/www/nextcloud/occ config:system:set"
+                   f" trusted_proxies {idx} --value=")
+            return sp.run(cmd.split(), cwd='/var/www/nextcloud',
+                          stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+
+
+def setTrustedProxy(host, index) -> CompletedProcess:
+    """
+    Sets a trusted proxy on the given index.
+    """
+    cmd = ("sudo -u www-data php /var/www/nextcloud/occ config:system:set"
+           " trusted_proxies {index}"
+           " --value={host} ").format(index=index, host=host)
+    return sp.run(cmd.split(), cwd='/var/www/nextcloud',
+                  stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+
+
+def installCrontab():
+    """
+    Injects the crontab for www-data
+    """
+    os.system("echo '*/5  *  *  *  * php -f /var/www/nextcloud/cron.php' | crontab -u www-data -")

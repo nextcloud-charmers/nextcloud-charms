@@ -54,8 +54,8 @@ class NextcloudCharm(CharmBase):
     def __init__(self, *args):
         super().__init__(*args)
         self.db = pgsql.PostgreSQLClient(self, 'db')  # 'db' relation in metadata.yaml
-        # The website provider takes care of incoming relations on the http interface.
-        self.website = HttpProvider(self, 'website', socket.getfqdn(), 80)
+        # The website relation is currentlt a haproxy serving as a reverse proxy.
+        self.haproxy = HttpProvider(self, 'website', socket.getfqdn(), 80)
         self._stored.set_default(nextcloud_datadir='/var/www/nextcloud/data/',
                                  nextcloud_fetched=False,
                                  nextcloud_initialized=False,
@@ -164,6 +164,12 @@ class NextcloudCharm(CharmBase):
         self.update_config_php_trusted_domains()
 
     def update_config_php_trusted_domains(self):
+        """
+        Updates trusted domains on peer relation
+        Updates nextcloud via occ-command with trusted domains
+        Updates the nexcloud_config peer relation data.
+        This should only be run on the unit leader.
+        """
         if not os.path.exists(NEXTCLOUD_CONFIG_PHP):
             return
 
@@ -269,6 +275,8 @@ class NextcloudCharm(CharmBase):
                 utils.set_nextcloud_permissions(self)
                 self._init_nextcloud()
                 self._add_initial_trusted_domain()
+                utils.installCrontab()
+                Occ.setBackgroundCron()
                 if self._is_nextcloud_installed():
                     self._stored.nextcloud_initialized = True
 
@@ -412,9 +420,10 @@ class NextcloudCharm(CharmBase):
         else:
             if self.model.unit.is_leader():
                 # Only leader need to set app version
-                self.unit.set_workload_version(self._nextcloud_version())
+                v = self._nextcloud_version()
+                self.unit.set_workload_version(v)
             # Set the active status to the running version.
-            self.unit.status = ActiveStatus(self._nextcloud_version() + " " + EMOJI_CLOUD)
+            self.unit.status = ActiveStatus(v + " " + EMOJI_CLOUD)
 
     def set_redis_info(self, info: dict):
         self._stored.redis_info = info
