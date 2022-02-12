@@ -1,31 +1,27 @@
 #!/usr/bin/env python3
 # Copyright 2020 Erik Lönroth
 # See LICENSE file for licensing details.
-
 import logging
 import subprocess as sp
 import sys
 import os
+import stat
 import socket
 from pathlib import Path
 import json
 import re
-
 from ops.charm import CharmBase
 from ops.main import main
 from ops.framework import StoredState
 from ops.lib import use
-
 from ops.model import (
     ActiveStatus,
     BlockedStatus,
     MaintenanceStatus,
     ModelError,
 )
-
 import utils
 from occ import Occ
-
 from interface_http import HttpProvider
 import interface_redis
 import interface_mount
@@ -77,7 +73,6 @@ class NextcloudCharm(CharmBase):
             self.on.cluster_relation_joined: self._on_cluster_relation_joined,
             self.on.cluster_relation_departed: self._on_cluster_relation_departed,
             self.on.cluster_relation_broken: self._on_cluster_relation_broken,
-            self.on.set_trusted_domain_action: self._on_set_trusted_domain_action,
             self.on.ceph_relation_changed: self._on_ceph_relation_changed,
             self.on.datadir_storage_attached: self._on_datadir_storage_attached,
             self.on.datadir_storage_detaching: self._on_datadir_storage_detaching
@@ -100,7 +95,9 @@ class NextcloudCharm(CharmBase):
         action_bindings = {
             self.on.add_missing_indices_action: self._on_add_missing_indices_action,
             self.on.convert_filecache_bigint_action: self._on_convert_filecache_bigint_action,
-            self.on.maintenance_action: self._on_maintenance_action
+            self.on.maintenance_action: self._on_maintenance_action,
+            self.on.set_trusted_domain_action: self._on_set_trusted_domain_action,
+            self.on.get_admin_password_action: self._on_get_admin_password_action,
         }
 
         for action, handler in action_bindings.items():
@@ -335,6 +332,24 @@ class NextcloudCharm(CharmBase):
         o = Occ.maintenance_mode(enable=event.params['enable'])
         event.set_results({"occ-output": o})
 
+    def _on_get_admin_password_action(self, event):
+        """
+        This action gets the content of the /root/.onetimelogin
+        ... and then removes it.
+        Effectively, it only works once.
+        """
+        logger.debug(EMOJI_ACTION_EVENT + sys._getframe().f_code.co_name)
+        logger.warning("get-admin-password action invoked.")
+
+        if os.path.exists('/root/.onetimelogin'):
+            with open('/root/.onetimelogin', 'r') as f:
+                p = f.read()
+                event.set_results({"initial-admin-password": p})
+                os.remove('/root/.onetimelogin')
+        else:
+            event.set_results({"initial-admin-password": "NOT AVAILABLE"})
+
+
     def _config_php(self):
         """
         Renders the phpmodule for nextcloud (nextcloud.ini)
@@ -365,18 +380,29 @@ class NextcloudCharm(CharmBase):
         :return:
         """
         self.unit.status = MaintenanceStatus("initializing nextcloud...")
+
+        # Generate and save the admin password
+        # It will be deleted as part of the
+        # action: get-admin-password so it will
+        # only be available for initial login.
+        p = utils.generatePassword()
+        with open('/root/.onetimelogin', 'w+') as f:
+            f.write(p)
+            os.chmod('/root/.onetimelogin', stat.S_IREAD)
+
         ctx = {'dbtype': self._stored.dbtype,
                'dbname': self._stored.dbname,
                'dbhost': self._stored.dbhost,
                'dbpass': self._stored.dbpass,
                'dbuser': self._stored.dbuser,
-               'adminpassword': self.config.get('admin-password'),
-               'adminusername': self.config.get('admin-username'),
+               'adminpassword': p,
+               'adminusername': 'admin',
                'datadir': str(self._stored.nextcloud_datadir)
                }
+        
         cp = Occ.maintenance_install(ctx)
         if cp.returncode == 0:
-            self.unit.status = MaintenanceStatus("initialized nextcloud = OK.")
+            self.unit.status = MaintenanceStatus("initialized nextcloud...")
         else:
             self.unit.status = BlockedStatus("Initialization failed this is what I know: " + cp.stdout)
             logger.error("Error while initializing nextcloud.")
