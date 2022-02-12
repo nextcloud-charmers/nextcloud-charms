@@ -24,3 +24,7 @@ maintenance:
       description: "Either true or false"
       type: boolean
   required: [ enable ]
+
+get-admin-password:
+  description: 'Gets the initial admin password. This will only work once.'
+  params: {}

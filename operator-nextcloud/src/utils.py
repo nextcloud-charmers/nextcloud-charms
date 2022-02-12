@@ -9,7 +9,8 @@ from pathlib import Path
 import jinja2
 import json
 import io
-# from charm import NextcloudCharm
+import string
+from random import randint, choice
 
 
 def _modify_port(start=None, end=None, protocol='tcp', hook_tool="open-port"):
@@ -387,3 +388,12 @@ def installCrontab():
     Injects the crontab for www-data
     """
     os.system("echo '*/5  *  *  *  * php -f /var/www/nextcloud/cron.php' | crontab -u www-data -")
+
+
+def generatePassword():
+    """
+    Generate a random password.
+    For use with setting admin credentials
+    """
+    characters = string.ascii_letters + string.punctuation + string.digits
+    return "".join(choice(characters) for x in range(randint(8, 16)))
