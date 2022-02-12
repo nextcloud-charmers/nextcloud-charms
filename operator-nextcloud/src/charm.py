@@ -349,7 +349,6 @@ class NextcloudCharm(CharmBase):
         else:
             event.set_results({"initial-admin-password": "NOT AVAILABLE"})
 
-
     def _config_php(self):
         """
         Renders the phpmodule for nextcloud (nextcloud.ini)
@@ -399,7 +398,7 @@ class NextcloudCharm(CharmBase):
                'adminusername': 'admin',
                'datadir': str(self._stored.nextcloud_datadir)
                }
-        
+
         cp = Occ.maintenance_install(ctx)
         if cp.returncode == 0:
             self.unit.status = MaintenanceStatus("initialized nextcloud...")
