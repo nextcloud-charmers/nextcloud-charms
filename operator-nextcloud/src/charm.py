@@ -264,6 +264,7 @@ class NextcloudCharm(CharmBase):
                 utils.set_nextcloud_permissions(self)
                 self._init_nextcloud()
                 self._add_initial_trusted_domain()
+                utils.installCrontab()
                 Occ.setBackgroundCron()
                 if self._is_nextcloud_installed():
                     self._stored.nextcloud_initialized = True
