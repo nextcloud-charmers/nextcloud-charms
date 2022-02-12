@@ -263,6 +263,7 @@ def get_phpversion():
     else:
         raise RuntimeError("No valid PHP version found in check")
 
+
 def installCrontab():
     """
     Injects the crontab for www-data
