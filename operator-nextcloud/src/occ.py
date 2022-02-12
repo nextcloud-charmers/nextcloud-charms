@@ -160,3 +160,12 @@ class Occ:
         else:
             logger.error("Unsupported overwriteprotocol provided as config: " + protocol)
             sys.exit(-1)
+
+    @staticmethod
+    def setBackgroundCron() -> CompletedProcess:
+        """
+        Sets the background job scheulder to cron
+        """
+        cmd = "sudo -u www-data /usr/bin/php occ background:cron --no-warnings"
+        return sp.run(cmd.split(), cwd='/var/www/nextcloud',
+                      stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)

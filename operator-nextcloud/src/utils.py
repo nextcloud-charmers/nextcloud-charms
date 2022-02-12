@@ -1,7 +1,7 @@
 import subprocess as sp
 from subprocess import CompletedProcess
 import sys
-
+import os
 import lsb_release
 import requests
 import tarfile
@@ -321,3 +321,10 @@ def setTrustedProxy(host, index) -> CompletedProcess:
            " --value={host} ").format(index=index, host=host)
     return sp.run(cmd.split(), cwd='/var/www/nextcloud',
                   stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+
+def installCrontab():
+    """
+    Injects the crontab for www-data
+    """
+    os.system("echo '*/5  *  *  *  * php -f /var/www/nextcloud/cron.php' | crontab -u www-data -")
+
