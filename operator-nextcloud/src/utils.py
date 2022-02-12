@@ -327,4 +327,3 @@ def installCrontab():
     Injects the crontab for www-data
     """
     os.system("echo '*/5  *  *  *  * php -f /var/www/nextcloud/cron.php' | crontab -u www-data -")
-
