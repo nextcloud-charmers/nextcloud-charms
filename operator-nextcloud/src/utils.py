@@ -1,6 +1,6 @@
 import subprocess as sp
 import sys
-
+import os
 import lsb_release
 import requests
 import tarfile
@@ -262,3 +262,10 @@ def get_phpversion():
         return "7.2"
     else:
         raise RuntimeError("No valid PHP version found in check")
+
+
+def installCrontab():
+    """
+    Injects the crontab for www-data
+    """
+    os.system("echo '*/5  *  *  *  * php -f /var/www/nextcloud/cron.php' | crontab -u www-data -")
