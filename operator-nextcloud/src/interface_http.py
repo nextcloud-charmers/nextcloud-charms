@@ -33,6 +33,7 @@ class HttpProvider(Object):
 
     def _on_relation_joined(self, event):
         """
+
         A joining reverse-proxy is added to the list of _trusted_proxies
         """
         if self.charm.model.unit.is_leader():
