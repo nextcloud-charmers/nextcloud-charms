@@ -169,3 +169,23 @@ class Occ:
         cmd = "sudo -u www-data /usr/bin/php occ background:cron --no-warnings"
         return sp.run(cmd.split(), cwd='/var/www/nextcloud',
                       stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+
+    @staticmethod
+    def setRewriteBase() -> CompletedProcess:
+        """
+        Use URL rewrite, "Pretty URL". Removes index.php from url:
+        https://nextcloud.dwellir.com/index.php/login -> https://nextcloud.dwellir.com/login
+        updateHtaccess() must run for this to have effect.
+        """
+        cmd = "sudo -u www-data php occ config:system:set htaccess.RewriteBase --value='/'"
+        return sp.run(cmd.split(), cwd='/var/www/nextcloud',
+                      stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+
+    @staticmethod
+    def updateHtaccess() -> CompletedProcess:
+        """
+        Updates the .htaccess file. Needed for some settings to have effect, e.g. setRewriteBase().
+        """
+        cmd = "sudo -u www-data php occ maintenance:update:htaccess"
+        return sp.run(cmd.split(), cwd='/var/www/nextcloud',
+                      stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)

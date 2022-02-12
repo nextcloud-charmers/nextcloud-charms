@@ -11,6 +11,7 @@ import json
 import io
 import string
 from random import randint, choice
+from occ import Occ
 
 
 def _modify_port(start=None, end=None, protocol='tcp', hook_tool="open-port"):
@@ -397,3 +398,12 @@ def generatePassword():
     """
     characters = string.ascii_letters + string.punctuation + string.digits
     return "".join(choice(characters) for x in range(randint(8, 16)))
+
+
+def setPrettyUrls():
+    """
+    Use URL rewrite, "Pretty URL". Removes index.php from url:
+    https://nextcloud.dwellir.com/index.php/login -> https://nextcloud.dwellir.com/login
+    """
+    Occ.setRewriteBase()
+    Occ.updateHtaccess()
