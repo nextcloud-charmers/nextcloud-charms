@@ -322,6 +322,7 @@ def setTrustedProxy(host, index) -> CompletedProcess:
     return sp.run(cmd.split(), cwd='/var/www/nextcloud',
                   stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
 
+
 def installCrontab():
     """
     Injects the crontab for www-data
