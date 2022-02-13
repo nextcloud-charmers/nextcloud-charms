@@ -9,7 +9,7 @@ Step 1:
 Step 2: You will get a text string. Add it to your DNS as a TXT record.
 
 Step 3: Wait for the DNS:s to be available: You can test until it appears:
-   nslookup -type=A _acme-challenge.ncdemo.lonroth.net
+   nslookup -type=TXT _acme-challenge.ncdemo.lonroth.net
 
 Step 4: Continute the certbot registration.
 
