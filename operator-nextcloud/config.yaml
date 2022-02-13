@@ -43,6 +43,13 @@ options:
     default: http
     description: >
       Set this to https if you place a ssl-termination proxy in front of your nextcloud instance.
+  overwrite-cli-url:
+    type: string
+    default: ''
+    description: >
+      Use this configuration parameter to specify the base URL for any URLs which are generated within
+      Nextcloud using any kind of command line tools (cron or occ).
+      The value should contain the full base URL: https://nextcloud.dwellir.com
   backup-host:
     type: string
     default: ''
