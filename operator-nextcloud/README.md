@@ -16,7 +16,11 @@ For a quick test of nextcloud, you can use this:
     ... wait for deployment to settle.
     Then, visit http://<yourip>
 
-Default admin login is: _admin:mypassword_
+To get the admin password:
+
+    juju run-action nextcloud/0 get-admin-password --wait
+
+Make sure to note it and change it after first login, since this action will only work once.
 
 ## Large scale deployment
 For a full scale out deployment with support for shared storage, redis and SSL deployment, see: https://charmhub.io/nextcloud/docs
