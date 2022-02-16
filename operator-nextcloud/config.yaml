@@ -55,6 +55,16 @@ options:
     default: ''
     description: >
       Host where to send backups.
+  backup-port:
+    type: int
+    default: '22'
+    description: >
+      SSH port to use for rsync to send backups to backup-host.
+  backup-user:
+    type: string
+    default: ''
+    description: >
+      User on backup-host that will receive the backups.
   backup-slack-webhook:
     type: string
     default: ''
