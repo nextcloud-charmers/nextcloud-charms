@@ -302,6 +302,8 @@ def config_backup(config, data_dir_path, db_host, db_user, db_pass):
     # Configuring run_backup.sh script
     run_backup_info = {
         "backup_host": config.get("backup-host"),
+        "backup_port": config.get("backup-port"),
+        "backup_user": config.get("backup-user"),
         "slack_webhook": config.get("backup-slack-webhook"),
         "pagerduty_serviceid": config.get("backup-pagerduty-serviceid"),
         "pagerduty_token": config.get("backup-pagerduty-token"),
