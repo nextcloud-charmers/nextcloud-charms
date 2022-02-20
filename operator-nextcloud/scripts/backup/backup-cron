@@ -21,4 +21,4 @@
 # For more information see the manual pages of crontab(5) and cron(8)
 # 
 # m h  dom mon dow   command
-* 02 * * *    root    /root/scripts/backup/run_backup.sh
+00 02 * * *    root    /root/scripts/backup/run_backup.sh
