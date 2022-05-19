@@ -229,10 +229,13 @@ def config_php(phpmod_context, templates_path, template):
     ).get_template(template)
     target_72 = Path('/etc/php/7.2/mods-available/nextcloud.ini')
     target_74 = Path('/etc/php/7.4/mods-available/nextcloud.ini')
+    target_81 = Path('/etc/php/8.1/mods-available/nextcloud.ini')
     if get_phpversion() == "7.4":
         target_74.write_text(template.render(phpmod_context))
     elif get_phpversion() == "7.2":
         target_72.write_text(template.render(phpmod_context))
+    elif get_phpversion() == "8.1":
+        target_81.write_text(template.render(phpmod_context))
     sp.check_call(['phpenmod', 'nextcloud'])
 
 
@@ -251,10 +254,13 @@ def config_redis_session(redis_info, templates_path, template):
     ).get_template(template)
     target_72 = Path('/etc/php/7.2/mods-available/redis_session.ini')
     target_74 = Path('/etc/php/7.4/mods-available/redis_session.ini')
+    target_81 = Path('/etc/php/7.4/mods-available/redis_session.ini')
     if get_phpversion() == "7.4":
         target_74.write_text(template.render(redis_info))
     elif get_phpversion() == "7.2":
         target_72.write_text(template.render(redis_info))
+    elif get_phpversion() == "8.1":
+        target_81.write_text(template.render(redis_info))
     sp.check_call(['phpenmod', 'redis_session'])
 
 
@@ -285,6 +291,8 @@ def get_phpversion():
         return "7.4"
     elif "PHP 7.2" in lines[0]:
         return "7.2"
+    elif "PHP 8.1" in lines[0]:
+        return "8.1"
     else:
         raise RuntimeError("No valid PHP version found in check")
 
