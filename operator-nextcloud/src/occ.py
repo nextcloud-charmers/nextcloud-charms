@@ -208,3 +208,4 @@ class Occ:
         cmd = f"sudo -u www-data php occ config:system:set debug --type=boolean --value={onoff}"
         return sp.run(cmd.split(), cwd='/var/www/nextcloud',
                       stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+    
