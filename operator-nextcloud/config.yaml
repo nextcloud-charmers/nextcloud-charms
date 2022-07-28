@@ -85,3 +85,8 @@ options:
     default: ''
     description: >
       PagerDuty service email for backup failure alarms.
+  debug:
+    type: boolean
+    default: false
+    description: >
+      Set debug mode for the main config.

@@ -199,3 +199,12 @@ class Occ:
         cmd = f"sudo -u www-data php occ config:system:set overwrite.cli.url --value={url}"
         return sp.run(cmd.split(), cwd='/var/www/nextcloud',
                       stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+
+    @staticmethod
+    def setDebug(onoff: bool) -> CompletedProcess:
+        """
+        Set the debug flag in config.php
+        """
+        cmd = f"sudo -u www-data php occ config:system:set debug --type=boolean --value={onoff}"
+        return sp.run(cmd.split(), cwd='/var/www/nextcloud',
+                      stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
