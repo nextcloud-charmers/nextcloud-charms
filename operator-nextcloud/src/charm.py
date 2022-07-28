@@ -136,7 +136,8 @@ class NextcloudCharm(CharmBase):
         # go that way rather than locally get changed since it its inconsistent with
         # how the rest of the config is done..
         self._config_overwriteprotocol()
-        Occ.overwriteCliUrl(self.config.get('overwrite-cli-url'))
+        self._config_debug()
+        self._config_overwritecliurl()
         sp.check_call(['systemctl', 'restart', 'apache2.service'])
         if self.config.get('backup-host') and self._stored.nextcloud_initialized and self._stored.database_available:
             self.unit.status = MaintenanceStatus("Configuring backup")
@@ -532,6 +533,22 @@ class NextcloudCharm(CharmBase):
         """
         if self._stored.nextcloud_initialized:
             Occ.overwriteprotocol(self.config.get('overwriteprotocol'))
+
+    def _config_debug(self):
+        """
+        Configures nextcloud system:debug from config value.
+        :return:
+        """
+        if self._stored.nextcloud_initialized:
+            Occ.setDebug(self.config.get('debug'))
+
+    def _config_overwritecliurl(self):
+        """
+        Configures nextcloud overwrite-cli-url config value.
+        :return:
+        """
+        if self._stored.nextcloud_initialized:
+            Occ.overwriteCliUrl(self.config.get('overwrite-cli-url'))
 
     def _make_ocdata_for_occ(self):
         """
