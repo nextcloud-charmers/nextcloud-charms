@@ -297,7 +297,6 @@ def get_phpversion():
         raise RuntimeError("No valid PHP version found in check")
 
 
-
 def config_backup(config, data_dir_path, db_host, db_user, db_pass):
     """
     Installs backup scripts and cronjob for scheduled backups.
@@ -336,6 +335,7 @@ def config_backup(config, data_dir_path, db_host, db_user, db_pass):
     ).get_template("NextcloudBackupRestore.conf")
     target = Path('/root/scripts/backup/Nextcloud-Backup-Restore/NextcloudBackupRestore.conf')
     target.write_text(template.render(backup_conf_info))
+
 
 def getTrustedProxies():
     """
