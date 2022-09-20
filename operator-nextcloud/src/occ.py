@@ -169,3 +169,42 @@ class Occ:
         cmd = "sudo -u www-data /usr/bin/php occ background:cron --no-warnings"
         return sp.run(cmd.split(), cwd='/var/www/nextcloud',
                       stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+
+    @staticmethod
+    def setRewriteBase() -> CompletedProcess:
+        """
+        Use URL rewrite, "Pretty URL". Removes index.php from url:
+        https://nextcloud.dwellir.com/index.php/login -> https://nextcloud.dwellir.com/login
+        updateHtaccess() must run for this to have effect.
+        """
+        cmd = "sudo -u www-data php occ config:system:set htaccess.RewriteBase --value='/'"
+        return sp.run(cmd.split(), cwd='/var/www/nextcloud',
+                      stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+
+    @staticmethod
+    def updateHtaccess() -> CompletedProcess:
+        """
+        Updates the .htaccess file. Needed for some settings to have effect, e.g. setRewriteBase().
+        """
+        cmd = "sudo -u www-data php occ maintenance:update:htaccess"
+        return sp.run(cmd.split(), cwd='/var/www/nextcloud',
+                      stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+
+    @staticmethod
+    def overwriteCliUrl(url) -> CompletedProcess:
+        """
+        Specify the base URL for any URLs which are generated within Nextcloud using any kind of command
+        line tools (cron or occ). The value should contain the full base URL: https://nextcloud.dwellir.com
+        """
+        cmd = f"sudo -u www-data php occ config:system:set overwrite.cli.url --value={url}"
+        return sp.run(cmd.split(), cwd='/var/www/nextcloud',
+                      stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+
+    @staticmethod
+    def setDebug(onoff: bool) -> CompletedProcess:
+        """
+        Set the debug flag in config.php
+        """
+        cmd = f"sudo -u www-data php occ config:system:set debug --type=boolean --value={onoff}"
+        return sp.run(cmd.split(), cwd='/var/www/nextcloud',
+                      stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)

@@ -9,7 +9,9 @@ from pathlib import Path
 import jinja2
 import json
 import io
-# from charm import NextcloudCharm
+import string
+from random import randint, choice
+from occ import Occ
 
 
 def _modify_port(start=None, end=None, protocol='tcp', hook_tool="open-port"):
@@ -70,6 +72,27 @@ def install_dependencies():
 def install_apt_update():
     command = ["sudo", "apt", "update", "-y"]
     sp.run(command, check=True)
+
+
+def install_backup_dependencies():
+    try:
+        packages = ['pigz',
+                    'postgresql-client',
+                    'python3-pip']
+        command = ["sudo", "apt", "install", "-y"]
+        command.extend(packages)
+        sp.run(command, check=True)
+    except sp.CalledProcessError as e:
+        print(e)
+        sys.exit(-1)
+    try:
+        packages = ['pdpyras==4.4.0']
+        command = ["sudo", "pip3", "install"]
+        command.extend(packages)
+        sp.run(command, check=True)
+    except sp.CalledProcessError as e:
+        print(e)
+        sys.exit(-1)
 
 
 def _install_dependencies_bionic():
@@ -206,10 +229,13 @@ def config_php(phpmod_context, templates_path, template):
     ).get_template(template)
     target_72 = Path('/etc/php/7.2/mods-available/nextcloud.ini')
     target_74 = Path('/etc/php/7.4/mods-available/nextcloud.ini')
+    target_81 = Path('/etc/php/8.1/mods-available/nextcloud.ini')
     if get_phpversion() == "7.4":
         target_74.write_text(template.render(phpmod_context))
     elif get_phpversion() == "7.2":
         target_72.write_text(template.render(phpmod_context))
+    elif get_phpversion() == "8.1":
+        target_81.write_text(template.render(phpmod_context))
     sp.check_call(['phpenmod', 'nextcloud'])
 
 
@@ -228,10 +254,13 @@ def config_redis_session(redis_info, templates_path, template):
     ).get_template(template)
     target_72 = Path('/etc/php/7.2/mods-available/redis_session.ini')
     target_74 = Path('/etc/php/7.4/mods-available/redis_session.ini')
+    target_81 = Path('/etc/php/7.4/mods-available/redis_session.ini')
     if get_phpversion() == "7.4":
         target_74.write_text(template.render(redis_info))
     elif get_phpversion() == "7.2":
         target_72.write_text(template.render(redis_info))
+    elif get_phpversion() == "8.1":
+        target_81.write_text(template.render(redis_info))
     sp.check_call(['phpenmod', 'redis_session'])
 
 
@@ -262,9 +291,51 @@ def get_phpversion():
         return "7.4"
     elif "PHP 7.2" in lines[0]:
         return "7.2"
+    elif "PHP 8.1" in lines[0]:
+        return "8.1"
     else:
         raise RuntimeError("No valid PHP version found in check")
 
+
+
+def config_backup(config, data_dir_path, db_host, db_user, db_pass):
+    """
+    Installs backup scripts and cronjob for scheduled backups.
+    """
+    # Replace all backup scripts with new ones from the charm.
+    sp.check_call("rm -rf /root/scripts/backup", shell=True)
+    sp.check_call("mkdir -p /root/scripts/backup", shell=True)
+    sp.check_call("cp -r scripts/backup/* /root/scripts/backup/", shell=True)
+    sp.check_call("cp scripts/backup/backup-cron /etc/cron.d/", shell=True)
+
+    # Configuring run_backup.sh script
+    run_backup_info = {
+        "backup_host": config.get("backup-host"),
+        "backup_port": config.get("backup-port"),
+        "backup_user": config.get("backup-user"),
+        "slack_webhook": config.get("backup-slack-webhook"),
+        "pagerduty_serviceid": config.get("backup-pagerduty-serviceid"),
+        "pagerduty_token": config.get("backup-pagerduty-token"),
+        "pagerduty_email": config.get("backup-pagerduty-email")
+    }
+    template = jinja2.Environment(
+        loader=jinja2.FileSystemLoader("scripts/backup")
+    ).get_template("run_backup.sh")
+    target = Path('/root/scripts/backup/run_backup.sh')
+    target.write_text(template.render(run_backup_info))
+
+    # Configuring Nextcloud-Backup-Restore.conf
+    backup_conf_info = {
+        "data_dir": data_dir_path,
+        "db_host": db_host,
+        "db_user": db_user,
+        "db_pass": db_pass
+    }
+    template = jinja2.Environment(
+        loader=jinja2.FileSystemLoader("scripts/backup/Nextcloud-Backup-Restore")
+    ).get_template("NextcloudBackupRestore.conf")
+    target = Path('/root/scripts/backup/Nextcloud-Backup-Restore/NextcloudBackupRestore.conf')
+    target.write_text(template.render(backup_conf_info))
 
 def getTrustedProxies():
     """
@@ -328,3 +399,21 @@ def installCrontab():
     Injects the crontab for www-data
     """
     os.system("echo '*/5  *  *  *  * php -f /var/www/nextcloud/cron.php' | crontab -u www-data -")
+
+
+def generatePassword():
+    """
+    Generate a random password.
+    For use with setting admin credentials
+    """
+    characters = string.ascii_letters + string.punctuation + string.digits
+    return "".join(choice(characters) for x in range(randint(8, 16)))
+
+
+def setPrettyUrls():
+    """
+    Use URL rewrite, "Pretty URL". Removes index.php from url:
+    https://nextcloud.dwellir.com/index.php/login -> https://nextcloud.dwellir.com/login
+    """
+    Occ.setRewriteBase()
+    Occ.updateHtaccess()

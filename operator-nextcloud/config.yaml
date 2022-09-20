@@ -4,16 +4,6 @@
 # This is only an example, and you should edit to suit your needs.
 # If you don't need config, you can remove the file entirely.
 options:
-  admin-username:
-    type: string
-    default: admin
-    description: >
-      The NextCloud admin user, only used at deploy, change with occ or web gui.
-  admin-password:
-    type: string
-    default: mypassword
-    description: >
-      The NextCloud admin password, only used at deploy, change with occ or web gui
   fqdn:
     type: string
     default: ""
@@ -53,3 +43,50 @@ options:
     default: http
     description: >
       Set this to https if you place a ssl-termination proxy in front of your nextcloud instance.
+  overwrite-cli-url:
+    type: string
+    default: ''
+    description: >
+      Use this configuration parameter to specify the base URL for any URLs which are generated within
+      Nextcloud using any kind of command line tools (cron or occ).
+      The value should contain the full base URL: https://nextcloud.dwellir.com
+  backup-host:
+    type: string
+    default: ''
+    description: >
+      Host where to send backups.
+  backup-port:
+    type: int
+    default: '22'
+    description: >
+      SSH port to use for rsync to send backups to backup-host.
+  backup-user:
+    type: string
+    default: ''
+    description: >
+      User on backup-host that will receive the backups.
+  backup-slack-webhook:
+    type: string
+    default: ''
+    description: >
+      Webhook to Slack channel for sending backup status.
+  backup-pagerduty-serviceid:
+    type: string
+    default: ''
+    description: >
+      PagerDuty service ID for backup failure alarms.
+  backup-pagerduty-token:
+    type: string
+    default: ''
+    description: >
+      PagerDuty token for backup failure alarms.
+  backup-pagerduty-email:
+    type: string
+    default: ''
+    description: >
+      PagerDuty service email for backup failure alarms.
+  debug:
+    type: boolean
+    default: false
+    description: >
+      Set debug mode for the main config.
