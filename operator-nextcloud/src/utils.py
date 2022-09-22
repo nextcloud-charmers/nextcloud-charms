@@ -276,7 +276,7 @@ def config_redis_session(redis_info, templates_path, template):
     ).get_template(template)
     target_72 = Path('/etc/php/7.2/mods-available/redis_session.ini')
     target_74 = Path('/etc/php/7.4/mods-available/redis_session.ini')
-    target_81 = Path('/etc/php/7.4/mods-available/redis_session.ini')
+    target_81 = Path('/etc/php/8.1/mods-available/redis_session.ini')
     if get_phpversion() == "7.4":
         target_74.write_text(template.render(redis_info))
     elif get_phpversion() == "7.2":
