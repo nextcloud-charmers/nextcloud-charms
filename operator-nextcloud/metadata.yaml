@@ -5,7 +5,6 @@ description: |
   Nextcloud productivity platform for private data and clouds.
 summary: |
   The full documentation for this charm lives here: https://charmhub.io/nextcloud/docs
-series: [bionic, focal]
 
 docs: https://discourse.charmhub.io/t/nextcloud-docs-index/4591
 
