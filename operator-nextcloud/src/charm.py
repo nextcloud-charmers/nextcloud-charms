@@ -562,8 +562,15 @@ class NextcloudCharm(CharmBase):
 
     def _is_nextcloud_installed(self):
         status = Occ.status()
-        match = re.findall(r'\{.*?\}', status.stdout)
-        return json.loads(match[0])['installed']
+        try:
+            match = re.findall(r'\{.*?\}', status.stdout)
+            return json.loads(match[0])['installed']
+        except IndexError:
+            return False
+        except Exception as e:
+            print("Failed determining installation status: ", e)
+            sys.exit(-1)
+
 
     def _nextcloud_version(self):
         logger.debug("Determined nextcloud version: " + json.loads(Occ.status().stdout)['version'])
