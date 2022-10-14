@@ -1,0 +1,24 @@
+# This file defines charm config options, and populates the Configure tab on Charmhub.
+# If your charm does not require configuration options, delete this file entirely.
+#
+# See https://juju.is/docs/config for guidance.
+
+options:
+  ssl-enable:
+    description: |
+      Runs 'coolconfig set ssl.enable false/true'.
+      If using a reverse proxy with ssl termination this needs to be false.
+    default: false
+    type: boolean
+  ssl-termination:
+    description: |
+      Runs 'coolconfig set ssl.termination false/true'.
+      If using a reverse proxy with ssl termination this needs to be true.
+    default: true
+    type: boolean
+  storage-wopi-host:
+    description: |
+      Runs 'coolconfig set storage.wopi.host nextcloud.example.com'.
+      Set trusted host. E.g. nextcloud.example.com
+    default: ''
+    type: string
