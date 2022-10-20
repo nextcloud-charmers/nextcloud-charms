@@ -168,10 +168,10 @@ def _install_dependencies_jammy():
     Inspired by: https://github.com/nextcloud/vm/blob/master/nextcloud_install_production.sh
     :return:
     """
-    packages="apache2 libapache2-mod-php8.1 php8.1-curl php8.1-xml \
-              php8.1-pgsql php8.1-mbstring php8.1-gd php8.1-redis \
-              php8.1-intl php8.1-gmp php8.1-bcmath php8.1-imagick \
-              php8.1-zip php8.1-fpm php8.1-intl php8.1-ldap".split()
+    packages = "apache2 libapache2-mod-php8.1 php8.1-curl php8.1-xml \
+                php8.1-pgsql php8.1-mbstring php8.1-gd php8.1-redis \
+                php8.1-intl php8.1-gmp php8.1-bcmath php8.1-imagick \
+                php8.1-zip php8.1-fpm php8.1-intl php8.1-ldap".split()
 
     try:
         command = ["sudo", "DEBIAN_FRONTEND=noninteractive", "apt", "install", "-y"]

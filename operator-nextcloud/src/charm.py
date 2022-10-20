@@ -17,8 +17,7 @@ from ops.lib import use
 from ops.model import (
     ActiveStatus,
     BlockedStatus,
-    MaintenanceStatus,
-    ModelError,
+    MaintenanceStatus
 )
 import utils
 from occ import Occ
@@ -116,13 +115,12 @@ class NextcloudCharm(CharmBase):
                 tarfile_path = self.model.resources.fetch('nextcloud-tarfile')
                 utils.extract_nextcloud(tarfile_path)
             except Exception as e:
-                logger.debug("Extracting resources failed - trying network."  + str(e))
+                logger.debug("Extracting resources failed - trying network." + str(e))
                 self.unit.status = MaintenanceStatus("installing (from network).")
                 utils.fetch_and_extract_nextcloud(self.config.get('nextcloud-tarfile'))
             utils.set_nextcloud_permissions(self)
             self.unit.status = MaintenanceStatus("installed")
             self._stored.nextcloud_fetched = True
-            
 
     def _on_config_changed(self, event):
         """
@@ -572,7 +570,6 @@ class NextcloudCharm(CharmBase):
         except Exception as e:
             print("Failed determining installation status: ", e)
             sys.exit(-1)
-
 
     def _nextcloud_version(self):
         logger.debug("Determined nextcloud version: " + json.loads(Occ.status().stdout)['version'])
