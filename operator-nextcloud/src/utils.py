@@ -2,7 +2,6 @@ import subprocess as sp
 from subprocess import CompletedProcess
 import sys
 import os
-import lsb_release
 import requests
 import tarfile
 from pathlib import Path
@@ -61,11 +60,12 @@ def install_dependencies():
     + bionic
     :return:
     """
-    if 'focal' == lsb_release.get_distro_information()['CODENAME']:
+    distro_codename = sp.check_output(['lsb_release', '-sc'], universal_newlines=True).strip()
+    if 'focal' == distro_codename:
         _install_dependencies_focal()
-    elif 'bionic' == lsb_release.get_distro_information()['CODENAME']:
+    elif 'bionic' == distro_codename:
         _install_dependencies_bionic()
-    elif 'jammy' == lsb_release.get_distro_information()['CODENAME']:
+    elif 'jammy' == distro_codename:
         _install_dependencies_jammy()
     else:
         raise RuntimeError("No valid series found to install package dependencies for")
