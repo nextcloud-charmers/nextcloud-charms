@@ -2,7 +2,6 @@ import subprocess as sp
 from subprocess import CompletedProcess
 import sys
 import os
-import lsb_release
 import requests
 import tarfile
 from pathlib import Path
@@ -61,11 +60,12 @@ def install_dependencies():
     + bionic
     :return:
     """
-    if 'focal' == lsb_release.get_distro_information()['CODENAME']:
+    distro_codename = sp.check_output(['lsb_release', '-sc'], universal_newlines=True).strip()
+    if 'focal' == distro_codename:
         _install_dependencies_focal()
-    elif 'bionic' == lsb_release.get_distro_information()['CODENAME']:
+    elif 'bionic' == distro_codename:
         _install_dependencies_bionic()
-    elif 'jammy' == lsb_release.get_distro_information()['CODENAME']:
+    elif 'jammy' == distro_codename:
         _install_dependencies_jammy()
     else:
         raise RuntimeError("No valid series found to install package dependencies for")
@@ -168,12 +168,13 @@ def _install_dependencies_jammy():
     Inspired by: https://github.com/nextcloud/vm/blob/master/nextcloud_install_production.sh
     :return:
     """
-    packages="apache2 libapache2-mod-php8.1 php8.1-curl php8.1-xml \
-              php8.1-pgsql php8.1-mbstring php8.1-gd php8.1-redis \
-              php8.1-intl php8.1-gmp php8.1-bcmath php8.1-imagick \
-              php8.1-zip php8.1-fpm php8.1-intl php8.1-ldap".split()
+    packages = "apache2 php8.1=8.1.2-1ubuntu2.5 libapache2-mod-php8.1 php8.1-curl php8.1-xml \
+                php8.1-pgsql php8.1-mbstring php8.1-gd php8.1-redis \
+                php8.1-intl php8.1-gmp php8.1-bcmath php8.1-imagick \
+                php8.1-zip php8.1-fpm php8.1-intl php8.1-ldap".split()
 
     try:
+        sp.run('sudo apt remove php8.1-common -y'.split(), check=True)
         command = ["sudo", "DEBIAN_FRONTEND=noninteractive", "apt", "install", "-y"]
         command.extend(packages)
         sp.run(command, check=True)

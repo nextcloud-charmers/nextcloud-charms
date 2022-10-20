@@ -10,7 +10,7 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
 
     steps:
     - uses: actions/checkout@v2
@@ -20,13 +20,13 @@ jobs:
 
     - name: Unittest nextcloud
       run: |
-        #TODO: some of this should be moved to requireents-dev.txt
+        #TODO: some of this should be moved to requirements-dev.txt
         
         # Install ...
         cd operator-nextcloud
-        pip3 install wheel
-        pip3 install -r requirements.txt
-        pip3 install -r requirements-dev.txt
+        sudo pip3 install wheel
+        sudo pip3 install -r requirements.txt
+        sudo pip3 install -r requirements-dev.txt
 
         # preserve environment since we also run functional tests here needing root but also env.
         sudo -preserve-env ./run_tests
