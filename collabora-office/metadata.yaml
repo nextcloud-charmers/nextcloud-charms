@@ -1,0 +1,17 @@
+# This file populates the Overview on Charmhub.
+# See https://juju.is/docs/sdk/metadata-reference for a checklist and guidance.
+
+# The charm package name, no spaces (required)
+# See https://juju.is/docs/sdk/naming#heading--naming-charms for guidance.
+name: collabora-office
+ 
+# The following metadata are human-readable and will be published prominently on Charmhub.
+
+# (Recommended)
+display-name: Collabora Office
+
+# (Required)
+summary: Installs Collabora office that can be used with e.g. Nextcloud.
+
+description: |
+  Installs Collabora office that can be used with e.g. Nextcloud.
