@@ -35,7 +35,7 @@ options:
       Setting for php
   nextcloud-tarfile:
     type: string
-    default: https://download.nextcloud.com/server/releases/nextcloud-23.0.0.tar.bz2
+    default: https://download.nextcloud.com/server/releases/nextcloud-25.0.5.tar.bz2
     description: >
       Sources for nextcloud (must be tar.bz2)
   overwriteprotocol:
@@ -57,7 +57,7 @@ options:
       Host where to send backups.
   backup-port:
     type: int
-    default: '22'
+    default: 22
     description: >
       SSH port to use for rsync to send backups to backup-host.
   backup-user:
