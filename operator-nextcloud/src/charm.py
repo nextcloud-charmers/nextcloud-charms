@@ -317,13 +317,14 @@ class NextcloudCharm(CharmBase):
         This action places the site in maintenance mode to protect it
         while this action runs.
         """
-        # TODO: Only leader should place site in maintenance.
-        logger.debug(EMOJI_ACTION_EVENT + sys._getframe().f_code.co_name)
-        Occ.maintenance_mode(enable=True)
-        o = Occ.db_convert_filecache_bigint()
-        event.set_results({"occ-output": o})
-        # TODO: Only leader should place site off maintenance.
-        Occ.maintenance_mode(enable=False)
+        if self.model.unit.is_leader():
+            logger.debug(EMOJI_ACTION_EVENT + sys._getframe().f_code.co_name)
+            Occ.maintenance_mode(enable=True)
+            o = Occ.db_convert_filecache_bigint()
+            event.set_results({"occ-output": o})
+            Occ.maintenance_mode(enable=False)
+        else:
+            event.set_results({"message": "Only leader unit can run this action. Nothing was done."})
 
     def _on_maintenance_action(self, event):
         """
@@ -450,6 +451,8 @@ class NextcloudCharm(CharmBase):
                 # Only leader need to set app version
                 v = self._nextcloud_version()
                 self.unit.set_workload_version(v)
+            # Log integrity of config.
+            self._checkLogConfigDiff()
             # Set the active status to the running version.
             self.unit.status = ActiveStatus(v + " " + EMOJI_CLOUD)
 
@@ -574,6 +577,20 @@ class NextcloudCharm(CharmBase):
     def _nextcloud_version(self):
         logger.debug("Determined nextcloud version: " + json.loads(Occ.status().stdout)['version'])
         return json.loads(Occ.status().stdout)['version']
+
+    def _checkLogConfigDiff(self):
+        """
+        Compares nextcloud config.php with cluster/peer with application databag.
+        Logs this information only.
+        """
+        cluster_rel = self.model.relations['cluster'][0]
+        with open(NEXTCLOUD_CONFIG_PHP) as f:
+            nextcloud_config = f.read()
+            if cluster_rel.data[self.app]['nextcloud_config'] == str(nextcloud_config):
+                logger.info("No manual/local changes to nextcloud config.php detected.")
+            else:
+                logger.warning("Manual/local changes to nextcloud config.php detected," +
+                               " this will cause config.php to be overwritten by juju config updates.")
 
 
 if __name__ == "__main__":
