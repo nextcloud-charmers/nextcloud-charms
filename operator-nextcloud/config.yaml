@@ -57,7 +57,7 @@ options:
       Host where to send backups.
   backup-port:
     type: int
-    default: '22'
+    default: 22
     description: >
       SSH port to use for rsync to send backups to backup-host.
   backup-user:
