@@ -589,8 +589,7 @@ class NextcloudCharm(CharmBase):
             if cluster_rel.data[self.app]['nextcloud_config'] == str(nextcloud_config):
                 logger.info("No manual/local changes to nextcloud config.php detected.")
             else:
-                logger.warning("Manual/local changes to nextcloud config.php detected," +
-                               " this will cause config.php to be overwritten by juju config updates.")
+                logger.warning("Manual/local changes to config.php detected, will be overwritten by config updates.")
 
 
 if __name__ == "__main__":
