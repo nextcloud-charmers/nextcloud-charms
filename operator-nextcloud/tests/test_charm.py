@@ -38,7 +38,6 @@ class TestCharm(unittest.TestCase):
 
     def setUp(self) -> None:
         sys.path.append('./lib')
-        
 
     def test_leader_install_hook(self):
         harness = Harness(NextcloudCharm)
