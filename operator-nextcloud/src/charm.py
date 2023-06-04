@@ -13,7 +13,6 @@ import re
 from ops.charm import CharmBase
 from ops.main import main
 from ops.framework import StoredState
-from ops.lib import use
 from ops.model import (
     ActiveStatus,
     BlockedStatus,
@@ -42,7 +41,7 @@ class NextcloudCharm(CharmBase):
 
     def __init__(self, *args):
         super().__init__(*args)
-        #Remove self.db = pgsql.PostgreSQLClient(self, 'db')  # 'db' relation in metadata.yaml
+        # Removed self.db = pgsql.PostgreSQLClient(self, 'db')  # 'db' relation in metadata.yaml
         self.database = DatabaseRequires(self, relation_name="database", database_name="nextcloud")
         # The website relation is currentlt a haproxy serving as a reverse proxy.
         self.haproxy = HttpProvider(self, 'website', socket.getfqdn(), 80)
@@ -53,8 +52,6 @@ class NextcloudCharm(CharmBase):
                                  apache_configured=False,
                                  php_configured=False,
                                  ceph_configured=False,)
-        
-        # self._stored.set_default(db_conn_str=None, db_uri=None, db_ro_uris=[])
 
         event_bindings = {
             self.on.install: self._on_install,
@@ -141,7 +138,6 @@ class NextcloudCharm(CharmBase):
                                 self._stored.dbuser, self._stored.dbpass)
         self._on_update_status(event)
 
-
     # Only leader is running this hook (verify this)
     def _on_leader_elected(self, event):
         logger.debug(emojis.EMOJI_CORE_HOOK_EVENT + sys._getframe().f_code.co_name)
@@ -215,13 +211,7 @@ class NextcloudCharm(CharmBase):
         logger.debug(emojis.EMOJI_CLOUD + sys._getframe().f_code.co_name)
         self.framework.breakpoint('departed')
         if self.model.unit.is_leader():
-            self.update_config_php_trusted_domains()
-
-    def _on_cluster_relation_broken(self, event):
-        logger.debug(emojis.EMOJI_CLOUD + sys._getframe().f_code.co_name)
-        pass
-
-    def _on_database_created(self, event: DatabaseCreatedEvent) -> None:
+            self.update_config_# self._stored.set_default(db_conn_str=None, db_uri=None, db_ro_uris=[])lf, event: DatabaseCreatedEvent) -> None:
         """
         Event is fired when postgres database is created.
         * Only leader gets to install or configure nextcloud.
@@ -363,7 +353,7 @@ class NextcloudCharm(CharmBase):
         with open('/root/.onetimelogin', 'w+') as f:
             f.write(p)
             os.chmod('/root/.onetimelogin', stat.S_IREAD)
-        
+
         # Collect database information from relation.
         db_data = self.fetch_postgres_relation_data()
 
