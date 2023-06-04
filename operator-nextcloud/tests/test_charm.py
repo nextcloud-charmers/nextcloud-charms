@@ -3,8 +3,9 @@
 # import sys
 import unittest
 from ops.testing import Harness
+import sys
 # from unittest.mock import Mock
-# sys.path.append('./src')
+# sys.path.append('./lib')
 from charm import NextcloudCharm
 
 
@@ -34,6 +35,10 @@ class TestCharm(unittest.TestCase):
     #     harness.charm._on_fortune_action(action_event)
     #
     #     self.assertEqual(action_event.fail.call_args, [("fail this",)])
+
+    def setUp(self) -> None:
+        sys.path.append('./lib')
+        
 
     def test_leader_install_hook(self):
         harness = Harness(NextcloudCharm)
