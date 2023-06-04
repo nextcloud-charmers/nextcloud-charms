@@ -115,6 +115,16 @@ class NextcloudCharm(CharmBase):
             self.unit.status = MaintenanceStatus("installed")
             self._stored.nextcloud_fetched = True
 
+    def updateClusterRelationData(self):
+            """
+            Trigger update of the cluster-relation data.
+            """
+            logger.debug("Updating cluster relation data.")
+            cluster_rel = self.model.relations['cluster'][0]
+            with open(NEXTCLOUD_CONFIG_PHP) as f:
+                nextcloud_config = f.read()
+                cluster_rel.data[self.app]['nextcloud_config'] = str(nextcloud_config)
+
     def _on_config_changed(self, event):
         """
         Any configuration change trigger a complete reconfigure of
@@ -125,12 +135,13 @@ class NextcloudCharm(CharmBase):
         logger.debug(emojis.EMOJI_CORE_HOOK_EVENT + sys._getframe().f_code.co_name)
         self._config_apache()
         self._config_php()
-        # TODO: let only the leader do changes to config. overwiteprotocol should
-        # go that way rather than locally get changed since it its inconsistent with
-        # how the rest of the config is done..
-        self._config_overwriteprotocol()
+        if self.model.unit.is_leader():
+            self._config_overwriteprotocol()
+            self._config_overwritecliurl()
+            self._config_default_phone_region()
+            self.updateClusterRelationData()
+        
         self._config_debug()
-        self._config_overwritecliurl()
         sp.check_call(['systemctl', 'restart', 'apache2.service'])
         if self.config.get('backup-host') and self._stored.nextcloud_initialized and self._stored.database_available:
             self.unit.status = MaintenanceStatus("Configuring backup")
@@ -159,9 +170,7 @@ class NextcloudCharm(CharmBase):
         this_unit_ip = cluster_rel.data[self.model.unit]['ingress-address']
         rel_unit_ip.append(this_unit_ip)
         Occ.update_trusted_domains_peer_ips(rel_unit_ip)
-        with open(NEXTCLOUD_CONFIG_PHP) as f:
-            nextcloud_config = f.read()
-            cluster_rel.data[self.app]['nextcloud_config'] = str(nextcloud_config)
+        self.updateClusterRelationData()
 
     def update_relation_ceph_config_php(self):
         if not os.path.exists(NEXTCLOUD_CEPH_CONFIG_PHP):
@@ -183,7 +192,7 @@ class NextcloudCharm(CharmBase):
     def _on_cluster_relation_changed(self, event):
         """
         When a change on the config happens:
-        Pull in configs from the peer (cluster) relation and write it to local disk.
+        Peers (non-leaders) pull in config from (cluster) relation and writes to local disk.
         """
         logger.debug(emojis.EMOJI_CLOUD + sys._getframe().f_code.co_name)
         if not self.model.unit.is_leader():
@@ -204,7 +213,7 @@ class NextcloudCharm(CharmBase):
                 with open(NEXTCLOUD_CEPH_CONFIG_PHP, "w") as f:
                     f.write(ceph_config)
 
-            # Since config comes via root, we need to fix the perms here.
+            # Set correct permissions
             utils.set_nextcloud_permissions(self)
 
     def _on_cluster_relation_departed(self, event):
@@ -524,6 +533,14 @@ class NextcloudCharm(CharmBase):
         """
         if self._stored.nextcloud_initialized:
             Occ.overwriteCliUrl(self.config.get('overwrite-cli-url'))
+
+    def _config_default_phone_region(self):
+        """
+        Configures nextcloud overwriteprotocol to http or https.
+        :return:
+        """
+        if self._stored.nextcloud_initialized:
+            Occ.defaultPhoneRegion(self.config.get('default-phone-region'))
 
     def _make_ocdata_for_occ(self):
         """

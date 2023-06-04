@@ -90,3 +90,8 @@ options:
     default: false
     description: >
       Set debug mode for the main config.
+  default-phone-region:
+    type: string
+    default: 'SE'
+    description: >
+      Phone region code (ISO 3166-1)

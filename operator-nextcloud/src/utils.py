@@ -440,3 +440,4 @@ def setPrettyUrls():
     """
     Occ.setRewriteBase()
     Occ.updateHtaccess()
+    
