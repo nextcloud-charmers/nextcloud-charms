@@ -16,7 +16,10 @@ jobs:
     - uses: actions/checkout@v2
     - name: "Prepare OS for builds and unittests"
       run: |
-        sudo apt-get install -y python3-setuptools python3-wheel
+        sudo apt-get install -y python3-setuptools python3-wheel tox
+        sudo pip3 install wheel
+        sudo pip3 install -r requirements.txt
+        sudo pip3 install -r requirements-dev.txt
 
     - name: Linting
       run: |
@@ -28,9 +31,5 @@ jobs:
         
         # Install ...
         cd operator-nextcloud
-        sudo pip3 install wheel
-        sudo pip3 install -r requirements.txt
-        sudo pip3 install -r requirements-dev.txt
-
         # preserve environment since we also run functional tests here needing root but also env.
         sudo -preserve-env ./run_tests
