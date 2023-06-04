@@ -116,14 +116,14 @@ class NextcloudCharm(CharmBase):
             self._stored.nextcloud_fetched = True
 
     def updateClusterRelationData(self):
-            """
-            Trigger update of the cluster-relation data.
-            """
-            logger.debug("Updating cluster relation data.")
-            cluster_rel = self.model.relations['cluster'][0]
-            with open(NEXTCLOUD_CONFIG_PHP) as f:
-                nextcloud_config = f.read()
-                cluster_rel.data[self.app]['nextcloud_config'] = str(nextcloud_config)
+        """
+        Trigger update of the cluster-relation data.
+        """
+        logger.debug("Updating cluster relation data.")
+        cluster_rel = self.model.relations['cluster'][0]
+        with open(NEXTCLOUD_CONFIG_PHP) as f:
+            nextcloud_config = f.read()
+            cluster_rel.data[self.app]['nextcloud_config'] = str(nextcloud_config)
 
     def _on_config_changed(self, event):
         """
@@ -140,7 +140,7 @@ class NextcloudCharm(CharmBase):
             self._config_overwritecliurl()
             self._config_default_phone_region()
             self.updateClusterRelationData()
-        
+
         self._config_debug()
         sp.check_call(['systemctl', 'restart', 'apache2.service'])
         if self.config.get('backup-host') and self._stored.nextcloud_initialized and self._stored.database_available:
