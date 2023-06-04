@@ -17,30 +17,24 @@ from ops.lib import use
 from ops.model import (
     ActiveStatus,
     BlockedStatus,
-    MaintenanceStatus
+    MaintenanceStatus,
+    WaitingStatus
 )
 import utils
+import emojis
 from occ import Occ
 from interface_http import HttpProvider
 import interface_redis
 import interface_mount
+from charms.data_platform_libs.v0.data_interfaces import DatabaseCreatedEvent
+from charms.data_platform_libs.v0.data_interfaces import DatabaseRequires
+
 
 logger = logging.getLogger(__name__)
-
-# POSTGRESQL interface documentation
-# https://github.com/canonical/ops-lib-pgsql
-pgsql = use("pgsql", 1, "postgresql-charmers@lists.launchpad.net")
 
 NEXTCLOUD_ROOT = os.path.abspath('/var/www/nextcloud')
 NEXTCLOUD_CONFIG_PHP = os.path.abspath('/var/www/nextcloud/config/config.php')
 NEXTCLOUD_CEPH_CONFIG_PHP = os.path.join(NEXTCLOUD_ROOT, 'config/ceph.config.php')
-
-EMOJI_ACTION_EVENT = "\U000026CF"
-EMOJI_CORE_HOOK_EVENT = "\U0001F4CC"
-EMOJI_RELATION_EVENT = "\U0001F9E9"
-EMOJI_CLOUD = "\U00002601"
-EMOJI_POSTGRES_EVENT = "\U0001F4BF"
-EMOJI_COMPUTER_DISK = "\U0001F4BD"
 
 
 class NextcloudCharm(CharmBase):
@@ -48,7 +42,8 @@ class NextcloudCharm(CharmBase):
 
     def __init__(self, *args):
         super().__init__(*args)
-        self.db = pgsql.PostgreSQLClient(self, 'db')  # 'db' relation in metadata.yaml
+        #Remove self.db = pgsql.PostgreSQLClient(self, 'db')  # 'db' relation in metadata.yaml
+        self.database = DatabaseRequires(self, relation_name="database", database_name="nextcloud")
         # The website relation is currentlt a haproxy serving as a reverse proxy.
         self.haproxy = HttpProvider(self, 'website', socket.getfqdn(), 80)
         self._stored.set_default(nextcloud_datadir='/var/www/nextcloud/data/',
@@ -58,15 +53,16 @@ class NextcloudCharm(CharmBase):
                                  apache_configured=False,
                                  php_configured=False,
                                  ceph_configured=False,)
-        self._stored.set_default(db_conn_str=None, db_uri=None, db_ro_uris=[])
+        
+        # self._stored.set_default(db_conn_str=None, db_uri=None, db_ro_uris=[])
 
         event_bindings = {
             self.on.install: self._on_install,
             self.on.config_changed: self._on_config_changed,
             self.on.start: self._on_start,
             self.on.leader_elected: self._on_leader_elected,
-            self.db.on.database_relation_joined: self._on_database_relation_joined,
-            self.db.on.master_changed: self._on_master_changed,
+            self.database.on.database_created: self._on_database_created,
+            self.database.on.endpoints_changed: self._on_database_created,
             self.on.update_status: self._on_update_status,
             self.on.cluster_relation_changed: self._on_cluster_relation_changed,
             self.on.cluster_relation_joined: self._on_cluster_relation_joined,
@@ -103,7 +99,7 @@ class NextcloudCharm(CharmBase):
             self.framework.observe(action, handler)
 
     def _on_install(self, event):
-        logger.debug(EMOJI_CORE_HOOK_EVENT + sys._getframe().f_code.co_name)
+        logger.debug(emojis.EMOJI_CORE_HOOK_EVENT + sys._getframe().f_code.co_name)
         self.unit.status = MaintenanceStatus("installing dependencies...")
         utils.install_apt_update()
         utils.install_dependencies()
@@ -129,7 +125,7 @@ class NextcloudCharm(CharmBase):
         :param event:
         :return:
         """
-        logger.debug(EMOJI_CORE_HOOK_EVENT + sys._getframe().f_code.co_name)
+        logger.debug(emojis.EMOJI_CORE_HOOK_EVENT + sys._getframe().f_code.co_name)
         self._config_apache()
         self._config_php()
         # TODO: let only the leader do changes to config. overwiteprotocol should
@@ -145,20 +141,10 @@ class NextcloudCharm(CharmBase):
                                 self._stored.dbuser, self._stored.dbpass)
         self._on_update_status(event)
 
-    def _on_database_relation_joined(self, event: pgsql.DatabaseRelationJoinedEvent):
-        if self.model.unit.is_leader():
-            # Provide requirements to the PostgreSQL server.
-            event.database = 'nextcloud'  # Request database named mydbname
-            event.extensions = ['citext']  # Request the citext extension installed
-        elif event.database != 'nextcloud':
-            # Leader has not yet set requirements. Defer, incase this unit
-            # becomes leader and needs to perform that operation.
-            event.defer()
-            return
 
     # Only leader is running this hook (verify this)
     def _on_leader_elected(self, event):
-        logger.debug(EMOJI_CORE_HOOK_EVENT + sys._getframe().f_code.co_name)
+        logger.debug(emojis.EMOJI_CORE_HOOK_EVENT + sys._getframe().f_code.co_name)
         logger.debug("!!!!!!!! I'm new nextcloud leader !!!!!!!!")
         self.update_config_php_trusted_domains()
 
@@ -190,7 +176,7 @@ class NextcloudCharm(CharmBase):
             cluster_rel.data[self.app]['ceph_config'] = str(ceph_config)
 
     def _on_cluster_relation_joined(self, event):
-        logger.debug(EMOJI_CLOUD + sys._getframe().f_code.co_name)
+        logger.debug(emojis.EMOJI_CLOUD + sys._getframe().f_code.co_name)
         if self.model.unit.is_leader():
             if not self._stored.nextcloud_initialized:
                 event.defer()
@@ -203,7 +189,7 @@ class NextcloudCharm(CharmBase):
         When a change on the config happens:
         Pull in configs from the peer (cluster) relation and write it to local disk.
         """
-        logger.debug(EMOJI_CLOUD + sys._getframe().f_code.co_name)
+        logger.debug(emojis.EMOJI_CLOUD + sys._getframe().f_code.co_name)
         if not self.model.unit.is_leader():
             if 'nextcloud_config' not in event.relation.data[self.app]:
                 event.defer()
@@ -226,62 +212,50 @@ class NextcloudCharm(CharmBase):
             utils.set_nextcloud_permissions(self)
 
     def _on_cluster_relation_departed(self, event):
-        logger.debug(EMOJI_CLOUD + sys._getframe().f_code.co_name)
+        logger.debug(emojis.EMOJI_CLOUD + sys._getframe().f_code.co_name)
         self.framework.breakpoint('departed')
         if self.model.unit.is_leader():
             self.update_config_php_trusted_domains()
 
     def _on_cluster_relation_broken(self, event):
-        logger.debug(EMOJI_CLOUD + sys._getframe().f_code.co_name)
+        logger.debug(emojis.EMOJI_CLOUD + sys._getframe().f_code.co_name)
         pass
 
-    def _on_master_changed(self, event: pgsql.MasterChangedEvent):
-        logger.debug(EMOJI_POSTGRES_EVENT + sys._getframe().f_code.co_name)
-        self.unit.status = MaintenanceStatus("database master changed")
-        if event.database != 'nextcloud':
-            # Leader has not yet set requirements. Wait until next event,
-            # or risk connecting to an incorrect database.
-            return
+    def _on_database_created(self, event: DatabaseCreatedEvent) -> None:
+        """
+        Event is fired when postgres database is created.
+        * Only leader gets to install or configure nextcloud.
+        * Only leader get to run crontabs.
+        Other peers will copy the configuration and therefore must trust that
+        nextcloud is initialized and that we have a database.
+        """
+        # We have a database.
+        self._stored.database_available = True
 
-        # Only leader gets to install or configure nextcloud.
-        # Other peers will copy the configuration and therefore must trust that
-        # nextcloud is initialized and that we have a database from config.
-        if not self.model.unit.is_leader():
-            self._stored.nextcloud_initialized = True
-            self._stored.database_available = True
+        # Leader gets to initialize and run crontabs
+        if self.model.unit.is_leader() and not self._stored.nextcloud_initialized:
+            utils.set_nextcloud_permissions(self)
+            self._init_nextcloud()
+            self._add_initial_trusted_domain()
+            utils.setPrettyUrls()
+            utils.installCrontab()
+            Occ.setBackgroundCron()
+            if self._is_nextcloud_installed():
+                self._stored.nextcloud_initialized = True
+                self._on_update_status(event)
+            else:
+                self._stored.nextcloud_initialized = False
+                logger.error("FAILED initializing Nextcloud, check logs.")
+                raise SystemExit(1)
 
-            # Perform a status update to indicate the status.
-            self._on_update_status(event)
-            return
-        # The connection to the primary database has been created,
-        # changed or removed. More specific events are available, but
-        # most charms will find it easier to just handle the Changed
-        # events. event.master is None if the master database is not
-        # available, or a pgsql.ConnectionString instance.
-
-        self._stored.db_conn_str = None if event.master is None else event.master.conn_str
-        self._stored.db_uri = None if event.master is None else event.master.uri
-        self._stored.dbname = None if event.master is None else event.master.dbname
-        self._stored.dbuser = None if event.master is None else event.master.user
-        self._stored.dbpass = None if event.master is None else event.master.password
-        self._stored.dbhost = None if event.master is None else event.master.host
-        self._stored.dbport = None if event.master is None else event.master.port
-        self._stored.dbtype = None if event.master is None else 'pgsql'
-
-        if event.master and event.database == 'nextcloud':
-            self._stored.database_available = True
-            if not self._stored.nextcloud_initialized:
-                utils.set_nextcloud_permissions(self)
-                self._init_nextcloud()
-                self._add_initial_trusted_domain()
-                utils.setPrettyUrls()
-                utils.installCrontab()
-                Occ.setBackgroundCron()
-                if self._is_nextcloud_installed():
-                    self._stored.nextcloud_initialized = True
+    def _on_database_relation_removed(self, event) -> None:
+        """Event is fired when relation with postgres is broken."""
+        self._stored.database_available = False
+        self.unit.status = WaitingStatus("Waiting for database relation")
+        raise SystemExit(0)
 
     def _on_start(self, event):
-        logger.debug(EMOJI_CORE_HOOK_EVENT + sys._getframe().f_code.co_name)
+        logger.debug(emojis.EMOJI_CORE_HOOK_EVENT + sys._getframe().f_code.co_name)
         if not self._is_nextcloud_installed():
             logger.debug("Nextcloud not installed, defering start.")
             event.defer()
@@ -299,15 +273,15 @@ class NextcloudCharm(CharmBase):
         If this event is fired, we are told to use a custom datadir.
         So, we set that here for this charm and remember that.
         """
-        logger.debug(EMOJI_COMPUTER_DISK + sys._getframe().f_code.co_name)
+        logger.debug(emojis.EMOJI_COMPUTER_DISK + sys._getframe().f_code.co_name)
         self._stored.nextcloud_datadir = str(event.storage.location)
 
     def _on_datadir_storage_detaching(self, event):
-        logger.debug(EMOJI_COMPUTER_DISK + sys._getframe().f_code.co_name)
+        logger.debug(emojis.EMOJI_COMPUTER_DISK + sys._getframe().f_code.co_name)
         pass
 
     def _on_add_missing_indices_action(self, event):
-        logger.debug(EMOJI_ACTION_EVENT + sys._getframe().f_code.co_name)
+        logger.debug(emojis.EMOJI_ACTION_EVENT + sys._getframe().f_code.co_name)
         o = Occ.db_add_missing_indices()
         event.set_results({"occ-output": o})
 
@@ -318,7 +292,7 @@ class NextcloudCharm(CharmBase):
         while this action runs.
         """
         if self.model.unit.is_leader():
-            logger.debug(EMOJI_ACTION_EVENT + sys._getframe().f_code.co_name)
+            logger.debug(emojis.EMOJI_ACTION_EVENT + sys._getframe().f_code.co_name)
             Occ.maintenance_mode(enable=True)
             o = Occ.db_convert_filecache_bigint()
             event.set_results({"occ-output": o})
@@ -332,7 +306,7 @@ class NextcloudCharm(CharmBase):
         :param event: boolean
         :return:
         """
-        logger.debug(EMOJI_ACTION_EVENT + sys._getframe().f_code.co_name)
+        logger.debug(emojis.EMOJI_ACTION_EVENT + sys._getframe().f_code.co_name)
         o = Occ.maintenance_mode(enable=event.params['enable'])
         event.set_results({"occ-output": o})
 
@@ -342,7 +316,7 @@ class NextcloudCharm(CharmBase):
         ... and then removes it.
         Effectively, it only works once.
         """
-        logger.debug(EMOJI_ACTION_EVENT + sys._getframe().f_code.co_name)
+        logger.debug(emojis.EMOJI_ACTION_EVENT + sys._getframe().f_code.co_name)
         logger.warning("get-admin-password action invoked.")
 
         if os.path.exists('/root/.onetimelogin'):
@@ -384,25 +358,27 @@ class NextcloudCharm(CharmBase):
         """
         self.unit.status = MaintenanceStatus("initializing nextcloud...")
 
-        # Generate and save the admin password
-        # It will be deleted as part of the
-        # action: get-admin-password so it will
-        # only be available for initial login.
+        # Generate a onetime password (retrieved by action)
         p = utils.generatePassword()
         with open('/root/.onetimelogin', 'w+') as f:
             f.write(p)
             os.chmod('/root/.onetimelogin', stat.S_IREAD)
+        
+        # Collect database information from relation.
+        db_data = self.fetch_postgres_relation_data()
 
-        ctx = {'dbtype': self._stored.dbtype,
-               'dbname': self._stored.dbname,
-               'dbhost': self._stored.dbhost,
-               'dbpass': self._stored.dbpass,
-               'dbuser': self._stored.dbuser,
+        ctx = {'dbtype': 'pgsql',
+               'dbname': db_data.get("db_name", None),
+               'dbhost': db_data.get("db_host", None),
+               'dbport': db_data.get("db_port", None),
+               'dbpass': db_data.get("db_password", None),
+               'dbuser': db_data.get("db_username", None),
                'adminpassword': p,
                'adminusername': 'admin',
                'datadir': str(self._stored.nextcloud_datadir)
                }
 
+        # Install Nextcloud
         cp = Occ.maintenance_install(ctx)
         if cp.returncode == 0:
             self.unit.status = MaintenanceStatus("initialized nextcloud...")
@@ -429,7 +405,7 @@ class NextcloudCharm(CharmBase):
         """
         Evaluate the internal state to report on status.
         """
-        logger.debug(EMOJI_CORE_HOOK_EVENT + sys._getframe().f_code.co_name)
+        logger.debug(emojis.EMOJI_CORE_HOOK_EVENT + sys._getframe().f_code.co_name)
 
         if not self._stored.nextcloud_fetched:
             self.unit.status = BlockedStatus("Nextcloud not fetched.")
@@ -454,7 +430,7 @@ class NextcloudCharm(CharmBase):
             # Log integrity of config.
             self._checkLogConfigDiff()
             # Set the active status to the running version.
-            self.unit.status = ActiveStatus(v + " " + EMOJI_CLOUD)
+            self.unit.status = ActiveStatus(v + " " + emojis.EMOJI_CLOUD)
 
     def set_redis_info(self, info: dict):
         self._stored.redis_info = info
@@ -565,6 +541,7 @@ class NextcloudCharm(CharmBase):
 
     def _is_nextcloud_installed(self):
         status = Occ.status()
+        logger.debug(status)
         try:
             match = re.findall(r'\{.*?\}', status.stdout)
             return json.loads(match[0])['installed']
@@ -584,12 +561,41 @@ class NextcloudCharm(CharmBase):
         Logs this information only.
         """
         cluster_rel = self.model.relations['cluster'][0]
-        with open(NEXTCLOUD_CONFIG_PHP) as f:
-            nextcloud_config = f.read()
-            if cluster_rel.data[self.app]['nextcloud_config'] == str(nextcloud_config):
-                logger.info("No manual/local changes to nextcloud config.php detected.")
+        try:
+            if 'nextcloud_config' in cluster_rel.data[self.app]:
+                with open(NEXTCLOUD_CONFIG_PHP) as f:
+                    nextcloud_config = f.read()
+                    if cluster_rel.data[self.app]['nextcloud_config'] == str(nextcloud_config):
+                        logger.info("No manual/local changes to nextcloud config.php detected.")
+                    else:
+                        logger.warning("Manual/local changes to config.php detected, will be overwritten by config updates.")
             else:
-                logger.warning("Manual/local changes to config.php detected, will be overwritten by config updates.")
+                logger.info("nextcloud_config key not found in cluster_rel.data.")
+        except KeyError:
+            logger.error("Error accessing cluster_rel.data dictionary.")
+
+    def fetch_postgres_relation_data(self) -> dict:
+        """
+        Get relational data.
+        """
+        data = self.database.fetch_relation_data()
+        logger.debug("Got following database data: %s", data)
+        for key, val in data.items():
+            if not val:
+                continue
+            logger.info("New PSQL database endpoint is %s", val["endpoints"])
+            host, port = val["endpoints"].split(":")
+            db_data = {
+                "db_host": host,
+                "db_port": port,
+                "db_username": val["username"],
+                "db_password": val["password"],
+                "db_name": val["database"],
+                "pgsql_version": val["version"]
+            }
+            return db_data
+        self.unit.status = WaitingStatus("Waiting for database relation")
+        raise SystemExit(0)
 
 
 if __name__ == "__main__":
