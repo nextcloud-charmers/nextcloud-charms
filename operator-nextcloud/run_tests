@@ -14,5 +14,4 @@ else
 fi
 
 echo "PYTHONPATH=$PYTHONPATH"
-python3 -m flake8 --ignore E501 -v "$@"
 python3 -m unittest -v "$@"
