@@ -13,7 +13,10 @@ bases:
       - name: ubuntu
         channel: "18.04"
         architectures: [amd64]
+
+# setuptools workaround: https://github.com/canonical/charmcraft/issues/632
 parts:
   charm:
     prime: 
       - scripts
+    charm-python-packages: [setuptools < 58]

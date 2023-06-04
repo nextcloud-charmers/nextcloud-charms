@@ -16,6 +16,10 @@ requires:
   db:
     interface: pgsql
 
+  database:
+    interface: postgresql_client
+    limit: 1
+
   redis:
     interface: redis
     optional: true
