@@ -423,10 +423,10 @@ class NextcloudCharm(CharmBase):
                 # Only leader need to set app version
                 v = self._nextcloud_version()
                 self.unit.set_workload_version(v)
-            # Log integrity of config.
-            self._checkLogConfigDiff()
-            # Set the active status to the running version.
-            self.unit.status = ActiveStatus(v + " " + emojis.EMOJI_CLOUD)
+        # Log integrity of config.
+        self._checkLogConfigDiff()
+        # Set the active status to the running version.
+        self.unit.status = ActiveStatus(v + " " + emojis.EMOJI_CLOUD)
 
     def set_redis_info(self, info: dict):
         self._stored.redis_info = info
