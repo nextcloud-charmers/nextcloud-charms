@@ -211,7 +211,13 @@ class NextcloudCharm(CharmBase):
         logger.debug(emojis.EMOJI_CLOUD + sys._getframe().f_code.co_name)
         self.framework.breakpoint('departed')
         if self.model.unit.is_leader():
-            self.update_config_# self._stored.set_default(db_conn_str=None, db_uri=None, db_ro_uris=[])lf, event: DatabaseCreatedEvent) -> None:
+            self.update_config_php_trusted_domains()
+
+    def _on_cluster_relation_broken(self, event):
+        logger.debug(emojis.EMOJI_CLOUD + sys._getframe().f_code.co_name)
+        pass
+
+    def _on_database_created(self, event: DatabaseCreatedEvent) -> None:
         """
         Event is fired when postgres database is created.
         * Only leader gets to install or configure nextcloud.
@@ -558,7 +564,8 @@ class NextcloudCharm(CharmBase):
                     if cluster_rel.data[self.app]['nextcloud_config'] == str(nextcloud_config):
                         logger.info("No manual/local changes to nextcloud config.php detected.")
                     else:
-                        logger.warning("Manual/local changes to config.php detected, will be overwritten by config updates.")
+                        logger.warning("Manual/local changes to config.php detected, \
+                                       will be overwritten by config updates.")
             else:
                 logger.info("nextcloud_config key not found in cluster_rel.data.")
         except KeyError:
