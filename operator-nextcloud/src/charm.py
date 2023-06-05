@@ -44,6 +44,7 @@ class NextcloudCharm(CharmBase):
         # Postgres
         self.database = DatabaseRequires(self, relation_name="database", database_name="nextcloud")
         # Haproxy
+
         self.haproxy = HttpProvider(self, 'website', socket.getfqdn(), 80)
         # Redis
         self.redis = interface_redis.RedisClient(self, "redis")
@@ -56,6 +57,7 @@ class NextcloudCharm(CharmBase):
                                  php_configured=False,
                                  ceph_configured=False,
                                  redis_info=dict())
+
 
         event_bindings = {
             self.on.install: self._on_install,
