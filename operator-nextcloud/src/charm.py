@@ -56,6 +56,7 @@ class NextcloudCharm(CharmBase):
                                  apache_configured=False,
                                  php_configured=False,
                                  ceph_configured=False,
+                                 config_altered_on_disk=False,
                                  redis_info=dict())
 
         event_bindings = {
@@ -120,7 +121,7 @@ class NextcloudCharm(CharmBase):
         """
         Trigger update of the cluster-relation data.
         """
-        logger.debug("Updating cluster relation data.")
+        logger.debug("Updating cluster relation data config.php on disk.")
         cluster_rel = self.model.relations['cluster'][0]
         with open(NEXTCLOUD_CONFIG_PHP) as f:
             nextcloud_config = f.read()
@@ -141,6 +142,8 @@ class NextcloudCharm(CharmBase):
             self._config_overwritecliurl()
             self._config_default_phone_region()
             self.updateClusterRelationData()
+            # Untoggle this after we have ran updateClusterRelationData
+            self._stored.config_altered_on_disk = False
 
         self._config_debug()
         sp.check_call(['systemctl', 'restart', 'apache2.service'])
@@ -412,6 +415,8 @@ class NextcloudCharm(CharmBase):
         Evaluate the internal state to report on status.
         """
         logger.debug(emojis.EMOJI_CORE_HOOK_EVENT + sys._getframe().f_code.co_name)
+        # Log integrity of config.
+        self._checkLogConfigDiff()
 
         if not self._stored.nextcloud_fetched:
             self.unit.status = BlockedStatus("Nextcloud not fetched.")
@@ -428,15 +433,24 @@ class NextcloudCharm(CharmBase):
         elif not self._stored.database_available:
             self.unit.status = BlockedStatus("No database.")
 
+        elif self._stored.config_altered_on_disk:
+            # At this point, a configure event will unblock.
+            # This should really be handled better somehow.
+            # For now - it will be visual.
+            self.unit.status = WaitingStatus("Warning: Local changes to config.php")
         else:
-            if self.model.unit.is_leader():
-                # Only leader need to set app version
+            try:
                 v = self._nextcloud_version()
-                self.unit.set_workload_version(v)
-        # Log integrity of config.
-        self._checkLogConfigDiff()
-        # Set the active status to the running version.
-        self.unit.status = ActiveStatus(v + " " + emojis.EMOJI_CLOUD)
+                if self.model.unit.is_leader():
+                    # Only leader need to set app version
+                    self.unit.set_workload_version(v)
+                    # Set the active status to the running version.
+                    self.unit.status = ActiveStatus(v + " " + emojis.EMOJI_CLOUD)
+                else:
+                    self.unit.status = ActiveStatus(v + " " + emojis.EMOJI_CLOUD)
+            except Exception as e:
+                logger.error("Failed query Nextcloud occ for status: ", e)
+                sys.exit(-1)
 
     def _on_redis_available(self, event):
         """
@@ -584,8 +598,10 @@ class NextcloudCharm(CharmBase):
                     if cluster_rel.data[self.app]['nextcloud_config'] == str(nextcloud_config):
                         logger.info("No manual/local changes to nextcloud config.php detected.")
                     else:
+                        # Toggle this information. Resolve it within config_changed.
+                        self._stored.config_altered_on_disk = True
                         logger.warning("Manual/local changes to config.php detected, \
-                                       will be overwritten by config updates.")
+                                       will be overwritten by config updates!")
             else:
                 logger.info("nextcloud_config key not found in cluster_rel.data.")
         except KeyError:
