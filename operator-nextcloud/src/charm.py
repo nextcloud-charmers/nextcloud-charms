@@ -41,17 +41,21 @@ class NextcloudCharm(CharmBase):
 
     def __init__(self, *args):
         super().__init__(*args)
-        # Removed self.db = pgsql.PostgreSQLClient(self, 'db')  # 'db' relation in metadata.yaml
+        # Postgres
         self.database = DatabaseRequires(self, relation_name="database", database_name="nextcloud")
-        # The website relation is currentlt a haproxy serving as a reverse proxy.
+        # Haproxy
         self.haproxy = HttpProvider(self, 'website', socket.getfqdn(), 80)
+        # Redis
+        self.redis = interface_redis.RedisClient(self, "redis")
+
         self._stored.set_default(nextcloud_datadir='/var/www/nextcloud/data/',
                                  nextcloud_fetched=False,
                                  nextcloud_initialized=False,
                                  database_available=False,
                                  apache_configured=False,
                                  php_configured=False,
-                                 ceph_configured=False,)
+                                 ceph_configured=False,
+                                 redis_info=dict())
 
         event_bindings = {
             self.on.install: self._on_install,
@@ -60,6 +64,8 @@ class NextcloudCharm(CharmBase):
             self.on.leader_elected: self._on_leader_elected,
             self.database.on.database_created: self._on_database_created,
             self.database.on.endpoints_changed: self._on_database_created,
+            self.redis.on.redis_available: self._on_redis_available,
+            self.redis.on.redis_broken: self._on_redis_broken,
             self.on.update_status: self._on_update_status,
             self.on.cluster_relation_changed: self._on_cluster_relation_changed,
             self.on.cluster_relation_joined: self._on_cluster_relation_joined,
@@ -69,12 +75,6 @@ class NextcloudCharm(CharmBase):
             self.on.datadir_storage_attached: self._on_datadir_storage_attached,
             self.on.datadir_storage_detaching: self._on_datadir_storage_detaching
         }
-
-        # Relation: redis (Interface: redis)
-        self._stored.set_default(redis_info=dict())
-        self._redis = interface_redis.RedisClient(self, "redis")
-        self.framework.observe(self._redis.on.redis_available,
-                               self._on_redis_available)
 
         # Relation: shared-fs (Interface: mount)
         self._sharedfs = interface_mount.NFSMountClient(self, "shared-fs")
@@ -437,18 +437,20 @@ class NextcloudCharm(CharmBase):
         # Set the active status to the running version.
         self.unit.status = ActiveStatus(v + " " + emojis.EMOJI_CLOUD)
 
-    def set_redis_info(self, info: dict):
-        self._stored.redis_info = info
-        utils.config_redis(info, Path(self.charm_dir / 'templates'), 'redis.config.php.j2')
-
     def _on_redis_available(self, event):
-        utils.config_redis(self._stored.redis_info,
-                           Path(self.charm_dir / 'templates'), 'redis.config.php.j2')
+        """
+        When redis is available, apache needs a restart.
+        /var/www/nextcloud/config/redis.config.php - modified
+        /etc/php/X.Y/mods-available/redis_session.ini - modified
+        """
+        sp.run(['systemctl', 'restart', 'apache2.service'])
 
-        utils.config_redis_session(self._stored.redis_info,
-                                   Path(self.charm_dir / 'templates'), 'redis_session.ini.j2')
-
-        # When redis is configured, apache needs a restart.
+    def _on_redis_broken(self, event):
+        """
+        When redis integration removed, apache needs a restart.
+        /var/www/nextcloud/config/redis.config.php - removed
+        /etc/php/X.Y/mods-available/redis_session.ini - removed
+        """
         sp.run(['systemctl', 'restart', 'apache2.service'])
 
     def _on_set_trusted_domain_action(self, event):
