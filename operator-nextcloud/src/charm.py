@@ -58,7 +58,6 @@ class NextcloudCharm(CharmBase):
                                  ceph_configured=False,
                                  redis_info=dict())
 
-
         event_bindings = {
             self.on.install: self._on_install,
             self.on.config_changed: self._on_config_changed,

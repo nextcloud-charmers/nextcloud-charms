@@ -261,6 +261,7 @@ def config_php(phpmod_context, templates_path, template):
         target_81.write_text(template.render(phpmod_context))
     sp.check_call(['phpenmod', 'nextcloud'])
 
+
 def config_ceph(ceph_info, templates_path, template):
     """
     Renders the phpmodule for nextcloud (nextcloud.ini)

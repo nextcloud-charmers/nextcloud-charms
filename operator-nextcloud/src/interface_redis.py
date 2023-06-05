@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""RedisRequires."""
 import logging
 from pathlib import Path
 import subprocess as sp
 import jinja2
-import utils 
+import utils
 
 from ops.framework import (
     EventBase,
@@ -89,7 +88,6 @@ class RedisClient(Object):
         logger.info("Redis relation was removed, configs purged.")
         self.on.redis_broken.emit()
 
-
     def config_redis(self, redis_info, template='redis.config.php.j2') -> str:
         """
         Configure redis.
@@ -113,10 +111,9 @@ class RedisClient(Object):
             target.write_text(rendered_content)
         return rendered_content
 
-
     def config_redis_session(self, redis_info, template='redis_session.ini.j2'):
         """
-        Puts redis session manager in place and enables the mod. 
+        Puts redis session manager in place and enables the mod.
         Removes the file if redis_info = None.
 
         Returns the rendered config or empty string.
