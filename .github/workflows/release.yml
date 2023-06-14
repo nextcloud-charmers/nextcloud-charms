@@ -15,19 +15,20 @@ jobs:
       runs-on: ubuntu-latest
       steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Get git version
         id: git-version
         run: |
-          echo "::set-output name=version::$(git describe --tags --dirty --always)"
+          echo "charm_version=$(git describe --tags --dirty --always)" >> "$GITHUB_ENV"
 
   build:
     name: Build nextcloud charm
     uses: canonical/data-platform-workflows/.github/workflows/build_charm_without_cache.yaml@v2
     with:
       path-to-charm-directory: operator-nextcloud
-      artifact-name: nextcloud-${{ needs.get-git-version.outputs.version }}.charm
+      artifact-name: nextcloud-${{ env.charm_version }}.charm
+    needs: setup
 
   show:
     name: Display output values
