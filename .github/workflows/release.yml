@@ -13,8 +13,6 @@ jobs:
   build:
     name: Build nextcloud charm
     uses: canonical/data-platform-workflows/.github/workflows/build_charms_with_cache.yaml@v2
-    with:
-      path-to-charm-directory: operator-nextcloud
 
   release:
     name: Release charm
