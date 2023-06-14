@@ -14,9 +14,8 @@ jobs:
     defaults:
       run:
         working-directory: operator-nextcloud/
-    steps:
-      - name: Build charm without cache
-        uses: canonical/data-platform-workflows/.github/workflows/build_charm_without_cache.yaml@v2
+    
+    uses: canonical/data-platform-workflows/.github/workflows/build_charm_without_cache.yaml@v2
       
 
   show:
