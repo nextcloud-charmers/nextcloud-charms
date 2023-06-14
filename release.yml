@@ -1,0 +1,32 @@
+name: Release Nextcloud to Charmhub
+
+on:
+  push:
+    branches:
+      - githubtests
+    paths: 
+      - operator-nextcloud
+
+jobs:
+  build:
+    name: Build charm
+    uses: canonical/data-platform-workflows/.github/workflows/build_charm_without_cache.yaml@v2
+
+  show:
+  # Display the value of the output
+      - name: Display output value
+        run: echo "The artifact name is ${{ needs.build.outputs.artifact-name }}"
+
+  release:
+    name: Release charm
+    if: false # Skip the job for testing
+    needs:
+      - build
+    uses: canonical/data-platform-workflows/.github/workflows/release_charm.yaml@v2
+    with:
+      channel: latest/edge
+      artifact-name: ${{ needs.build.outputs.artifact-name }}
+    secrets:
+      charmhub-token: ${{ secrets.CHARMHUB_TOKEN }}
+    permissions:
+      contents: write  # Needed to create GitHub release
