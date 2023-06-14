@@ -9,11 +9,15 @@ on:
 
 jobs:
   build:
-    name: Build charm
-    uses: canonical/data-platform-workflows/.github/workflows/build_charm_without_cache.yaml@v2
+    name: Build nextcloud charm
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: operator-nextcloud/
+    steps:
+      - name: Build charm without cache
+        uses: canonical/data-platform-workflows/.github/workflows/build_charm_without_cache.yaml@v2
+      
 
   show:
     name: Display output value
