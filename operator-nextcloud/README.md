@@ -14,7 +14,7 @@ For a quick test of nextcloud, you can use this:
     juju relate nextcloud:database postgresql
 
     ... wait for deployment to settle.
-    Then, visit http://<yourip>
+    Then, visit http://ip.ip.ip.ip
 
 To get the admin password:
 
