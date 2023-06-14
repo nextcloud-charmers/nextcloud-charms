@@ -10,12 +10,10 @@ on:
 jobs:
 
   build:
-    steps:
-    - name: Change to desired directory
-      run: cd operator-nextcloud/
-
-    - name: Build nextcloud charm
-      uses: canonical/data-platform-workflows/.github/workflows/build_charm_without_cache.yaml@v2
+    name: Build nextcloud charm
+    uses: canonical/data-platform-workflows/.github/workflows/build_charm_without_cache.yaml@v2
+    with:
+      working-directory: operator-nextcloud/
 
   show:
     name: Display output value
