@@ -13,7 +13,6 @@ jobs:
 
   build:
     name: Build nextcloud charm
-    needs: setup
     uses: canonical/data-platform-workflows/.github/workflows/build_charm_without_cache.yaml@v2
     with:
       path-to-charm-directory: operator-nextcloud
