@@ -22,11 +22,8 @@ jobs:
   show:
     name: Display output value
     runs-on: ubuntu-latest
-    steps:
-      - name: Display artifact name
-        needs:
-          - build
-        run: echo "The artifact name is ${{ needs.build.outputs.artifact-name }}"
+    needs: build
+    run: echo "The artifact name is ${{ needs.build.outputs.artifact-name }}"
 
   release:
     name: Release charm
