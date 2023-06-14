@@ -16,8 +16,7 @@ jobs:
   
       - name: Build nextcloud charm
         uses: canonical/data-platform-workflows/.github/workflows/build_charm_without_cache.yaml@v2
-      
-      
+
   show:
     name: Display output value
     runs-on: ubuntu-latest
