@@ -24,6 +24,7 @@ jobs:
     with:
       channel: latest/edge
       artifact-name: ${{ needs.build.outputs.artifact-name }}
+      path-to-charm-directory: operator-nextcloud
     secrets:
       charmhub-token: ${{ secrets.CHARMHUB_TOKEN }}
     permissions:
