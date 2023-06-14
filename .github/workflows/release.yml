@@ -19,7 +19,6 @@ jobs:
       path-to-charm-directory: operator-nextcloud
       artifact-name: nextcloud-edge.charm
 
-jobs:
   show:
     name: Display output value
     runs-on: ubuntu-latest
