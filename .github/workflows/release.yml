@@ -13,9 +13,8 @@ jobs:
     uses: canonical/data-platform-workflows/.github/workflows/build_charm_without_cache.yaml@v2
 
   show:
-  # Display the value of the output
-      - name: Display output value
-        run: echo "The artifact name is ${{ needs.build.outputs.artifact-name }}"
+    - name: Display output value
+      run: echo "The artifact name is ${{ needs.build.outputs.artifact-name }}"
 
   release:
     name: Release charm
