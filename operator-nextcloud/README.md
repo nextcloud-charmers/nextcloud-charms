@@ -8,7 +8,7 @@ The full documentation for this charm lives here: https://charmhub.io/nextcloud/
 For a quick test of nextcloud, you can use this:
 
     juju add-model my-nextcloud
-    juju model-config default-series=focal
+    juju model-config default-series=jammy
     juju deploy postgresql
     juju deploy nextcloud
     juju relate nextcloud:db postgresql:db
