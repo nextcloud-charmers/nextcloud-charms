@@ -9,9 +9,11 @@ on:
 
 jobs:
   change-working-directory:
+    name: Build nextcloud charm
+    runs-on: ubuntu-latest
     defaults:
-    run:
-      working-directory: operator-nextcloud/
+      run:
+        working-directory: operator-nextcloud/
 
   build:
     name: Build nextcloud charm
