@@ -8,12 +8,17 @@ on:
       - 'operator-nextcloud/**'
 
 jobs:
-  change-working-directory:
+  set-working-directory:
     name: Build nextcloud charm
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: operator-nextcloud/
+    steps:
+      - name: Show working directory
+        run:  run: |
+          echo "Current working directory:"
+          pwd
 
   build:
     name: Build nextcloud charm
