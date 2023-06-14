@@ -8,15 +8,15 @@ on:
       - 'operator-nextcloud/**'
 
 jobs:
+  change-working-directory:
+    defaults:
+    run:
+      working-directory: operator-nextcloud/
+
   build:
     name: Build nextcloud charm
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: operator-nextcloud/
     uses: canonical/data-platform-workflows/.github/workflows/build_charm_without_cache.yaml@v2
       
-
   show:
     name: Display output value
     runs-on: ubuntu-latest
