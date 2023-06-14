@@ -1,5 +1,7 @@
 name: Release Nextcloud to Charmhub
 
+# Triggered when changes happen in the operator-nextcloud subdirectory.
+
 on:
   push:
     branches:
@@ -8,12 +10,20 @@ on:
       - 'operator-nextcloud/**'
 
 jobs:
+  setup:
+    name: Set up working directory
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+
+      - name: Change to desired directory
+        run: cd operator-nextcloud/
 
   build:
     name: Build nextcloud charm
+    needs: setup
     uses: canonical/data-platform-workflows/.github/workflows/build_charm_without_cache.yaml@v2
-    with:
-      working-directory: operator-nextcloud/
 
   show:
     name: Display output value
