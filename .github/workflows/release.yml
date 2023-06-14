@@ -11,15 +11,25 @@ on:
 
 jobs:
 
+  setup:
+      steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Get git version
+        id: git-version
+        run: |
+          echo "::set-output name=version::$(git describe --tags --dirty --always)"
+
   build:
     name: Build nextcloud charm
     uses: canonical/data-platform-workflows/.github/workflows/build_charm_without_cache.yaml@v2
     with:
       path-to-charm-directory: operator-nextcloud
-      artifact-name: nextcloud-edge.charm
+      artifact-name: nextcloud-${{ needs.get-git-version.outputs.version }}.charm
 
   show:
-    name: Display output value
+    name: Display output values
     runs-on: ubuntu-latest
     needs: build
     steps:
