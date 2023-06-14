@@ -19,11 +19,15 @@ jobs:
       path-to-charm-directory: operator-nextcloud
       artifact-name: nextcloud-edge.charm
 
+jobs:
   show:
     name: Display output value
     runs-on: ubuntu-latest
     needs: build
-    run: echo "The artifact name is ${{ needs.build.outputs.artifact-name }}"
+    steps:
+      - name: Display artifact name
+        run: echo "The artifact name is ${{ needs.build.outputs.artifact-name }}"
+
 
   release:
     name: Release charm
