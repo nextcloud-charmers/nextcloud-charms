@@ -27,7 +27,7 @@ jobs:
     uses: canonical/data-platform-workflows/.github/workflows/build_charm_without_cache.yaml@v2
     with:
       path-to-charm-directory: operator-nextcloud
-      artifact-name: nextcloud-${{ needs.setup.outputs.charm_version }}.charm
+      artifact-name: nextcloud-${{ needs.setup.steps.git-version.outputs.charm_version }}.charm
     needs: setup
 
   show:
