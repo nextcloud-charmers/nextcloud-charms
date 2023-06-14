@@ -5,7 +5,7 @@ on:
     branches:
       - githubtests
     paths: 
-      - operator-nextcloud
+      - 'operator-nextcloud/**'
 
 jobs:
   build:
