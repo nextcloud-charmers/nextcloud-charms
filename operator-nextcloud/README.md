@@ -1,6 +1,8 @@
 # Nextcloud
 The self-hosted productivity platform that keeps you in control of your data.
 
+Works with postgresql as a database backend.
+
 ## Description
 The full documentation for this charm lives here: https://charmhub.io/nextcloud/docs
 

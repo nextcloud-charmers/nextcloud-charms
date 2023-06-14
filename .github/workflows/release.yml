@@ -10,6 +10,7 @@ on:
 jobs:
   build:
     name: Build charm
+    working-directory: operator-nextcloud/
     uses: canonical/data-platform-workflows/.github/workflows/build_charm_without_cache.yaml@v2
 
   show:
