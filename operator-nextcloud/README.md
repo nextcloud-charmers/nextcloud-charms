@@ -33,7 +33,7 @@ under a official partner program with [Nextcloud].
 
 Contact [Kafit.se] or [Erik Lönroth] for more information on professional supported solutions of Nextcloud. 
 
-Any installation growing above 100 users should consider a enterprise license contract.
+Any installation growing above 100 users should consider a enterprise license contract
 
 ## Contribute to this charm
 We love to see more people adding to the charm code. Let us know if you want to help develop it.
