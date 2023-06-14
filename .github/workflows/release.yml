@@ -10,38 +10,14 @@ on:
       - 'operator-nextcloud/**'
 
 jobs:
-
-  setup:
-      runs-on: ubuntu-latest
-      steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Get git version
-        id: git-version
-        run: |
-          echo "charm_version=$(git describe --tags --dirty --always)" >> "$GITHUB_OUTPUT"
-
   build:
     name: Build nextcloud charm
     uses: canonical/data-platform-workflows/.github/workflows/build_charm_without_cache.yaml@v2
     with:
       path-to-charm-directory: operator-nextcloud
-      artifact-name: nextcloud-${{ needs.setup.steps.git-version.outputs.charm_version }}.charm
-    needs: setup
-
-  show:
-    name: Display output values
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Display artifact name
-        run: echo "The artifact name is ${{ needs.build.outputs.artifact-name }}"
-
 
   release:
     name: Release charm
-    if: false # Skip the job for testing
     needs:
       - build
     uses: canonical/data-platform-workflows/.github/workflows/release_charm.yaml@v2
