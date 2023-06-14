@@ -20,14 +20,14 @@ jobs:
       - name: Get git version
         id: git-version
         run: |
-          echo "charm_version=$(git describe --tags --dirty --always)" >> "$GITHUB_ENV"
+          echo "charm_version=$(git describe --tags --dirty --always)" >> "$GITHUB_OUTPUT"
 
   build:
     name: Build nextcloud charm
     uses: canonical/data-platform-workflows/.github/workflows/build_charm_without_cache.yaml@v2
     with:
       path-to-charm-directory: operator-nextcloud
-      artifact-name: nextcloud-${{ env.charm_version }}.charm
+      artifact-name: nextcloud-${{ needs.setup.outputs.charm_version }}.charm
     needs: setup
 
   show:
